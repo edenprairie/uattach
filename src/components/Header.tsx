@@ -1,0 +1,35 @@
+"use client";
+
+import Link from 'next/link';
+import { useCart } from '@/context/CartContext';
+
+export function Header() {
+    const { items } = useCart();
+    const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
+
+    return (
+        <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
+                <div className="flex items-center gap-8">
+                    <Link href="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
+                        <span className="text-blue-600">U</span>attach
+                    </Link>
+                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+                        <Link href="/" className="hover:text-slate-900 transition-colors">Catalog</Link>
+                        <Link href="/orders" className="hover:text-slate-900 transition-colors">My Orders</Link>
+                    </nav>
+                </div>
+                <div className="flex items-center gap-4">
+                    <button className="text-sm font-medium text-slate-600 hover:text-slate-900">
+                        Sign In
+                    </button>
+                    <button
+                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+                    >
+                        Cart ({cartCount})
+                    </button>
+                </div>
+            </div>
+        </header>
+    );
+}
