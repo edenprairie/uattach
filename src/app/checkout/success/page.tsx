@@ -1,11 +1,11 @@
 "use client";
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import confetti from 'canvas-confetti';
 
-export default function SuccessPage() {
+function SuccessContent() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId') || '------';
 
@@ -59,5 +59,17 @@ export default function SuccessPage() {
                 </Link>
             </div>
         </div>
+    );
+}
+
+export default function SuccessPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen pt-24 pb-12 bg-slate-50 flex items-center justify-center">
+                <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+            </div>
+        }>
+            <SuccessContent />
+        </Suspense>
     );
 }
