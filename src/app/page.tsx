@@ -7,9 +7,12 @@ import { PRODUCTS } from '@/lib/mockData';
 import { Hero } from '@/components/Hero';
 import { PDFModal } from '@/components/PDFModal';
 
+import { SearchBar } from '@/components/SearchBar';
+
 export default function Home() {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [currentPdf, setCurrentPdf] = useState<{ url: string, title: string } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleOpenPdf = (url: string, title: string) => {
     setCurrentPdf({ url, title });
@@ -20,6 +23,15 @@ export default function Home() {
     setPdfModalOpen(false);
     setCurrentPdf(null);
   };
+
+  const filteredProducts = PRODUCTS.filter(product => {
+    const query = searchQuery.toLowerCase();
+    return (
+      product.name.toLowerCase().includes(query) ||
+      product.category.toLowerCase().includes(query) ||
+      product.description.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <main className="min-h-screen bg-slate-50 pb-20">
@@ -32,18 +44,36 @@ export default function Home() {
           <div className="lg:col-span-8">
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-slate-900 mb-2">Our Products</h2>
-              <div className="h-1 w-20 bg-blue-600 rounded-full mb-4"></div>
-              <p className="text-slate-500 text-lg">Browse our selection of heavy-duty attachment solutions.</p>
+              <div className="h-1 w-20 bg-blue-600 rounded-full mb-6"></div>
+              <SearchBar onSearch={setSearchQuery} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {PRODUCTS.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onOpenPdf={handleOpenPdf}
-                />
-              ))}
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map(product => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onOpenPdf={handleOpenPdf}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
+                  <div className="text-gray-300 mb-4">
+                    <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">No products found</h3>
+                  <p className="text-slate-500">We couldn't find matches for "{searchQuery}"</p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="mt-4 text-blue-600 font-medium hover:underline"
+                  >
+                    Clear Search
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

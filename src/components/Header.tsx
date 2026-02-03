@@ -26,7 +26,9 @@ export function Header() {
                 <div className="flex items-center gap-4">
                     {user ? (
                         <>
-                            <span className="hidden sm:inline text-sm font-medium text-slate-700">Hi, {user.username}</span>
+                            <Link href="/profile" className="hidden sm:inline text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors">
+                                Hi, {user.shippingAddress?.firstName ? `${user.shippingAddress.firstName} ${user.shippingAddress.lastName}` : user.username}
+                            </Link>
                             <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors">
                                 Sign Out
                             </button>

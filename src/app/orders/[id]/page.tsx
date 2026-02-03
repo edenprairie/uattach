@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Order } from '@/lib/types';
-import { PDFThumbnail } from '@/components/PDFThumbnail';
+
+import { useAuth } from '@/context/AuthContext'; // Import Auth
 import dynamic from 'next/dynamic';
 
 const PDFThumbnailClient = dynamic(() => import('@/components/PDFThumbnail'), {
@@ -17,6 +18,23 @@ export default function OrderDetailPage() {
     const orderId = params.id as string;
     const [order, setOrder] = useState<Order | null>(null);
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth(); // Get User
+
+    const handleStatusChange = (newStatus: Order['status']) => {
+        if (!order) return;
+
+        // Update local state
+        const updatedOrder = { ...order, status: newStatus };
+        setOrder(updatedOrder);
+
+        // Update localStorage
+        const saved = localStorage.getItem('uattach-orders');
+        if (saved) {
+            const orders = JSON.parse(saved) as Order[];
+            const updatedOrders = orders.map(o => o.id === order.id ? updatedOrder : o);
+            localStorage.setItem('uattach-orders', JSON.stringify(updatedOrders));
+        }
+    };
 
     useEffect(() => {
         const saved = localStorage.getItem('uattach-orders');
@@ -77,11 +95,26 @@ export default function OrderDetailPage() {
                             <p className="text-slate-300 text-sm mt-1">Placed on {new Date(order.date).toLocaleDateString()} at {new Date(order.date).toLocaleTimeString()}</p>
                         </div>
                         <div className="flex flex-col items-end">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase
-                                ${order.status === 'pending' ? 'bg-yellow-400 text-yellow-900' :
-                                    order.status === 'processing' ? 'bg-blue-400 text-blue-900' : 'bg-green-400 text-green-900'}`}>
-                                {order.status}
-                            </span>
+                            {user?.role === 'admin' ? (
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-300 font-medium">Status:</span>
+                                    <select
+                                        value={order.status}
+                                        onChange={(e) => handleStatusChange(e.target.value as Order['status'])}
+                                        className="bg-slate-800 text-white text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-600 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                                    >
+                                        <option value="pending">Pending</option>
+                                        <option value="processing">Processing</option>
+                                        <option value="shipped">Shipped</option>
+                                    </select>
+                                </div>
+                            ) : (
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase
+                                    ${order.status === 'pending' ? 'bg-yellow-400 text-yellow-900' :
+                                        order.status === 'processing' ? 'bg-blue-400 text-blue-900' : 'bg-green-400 text-green-900'}`}>
+                                    {order.status}
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -141,7 +174,7 @@ export default function OrderDetailPage() {
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="font-bold text-slate-900">{item.quantity}x</p>
-                                                    <p className="text-xs text-slate-500">{item.weightKg} kg/ea</p>
+                                                    <p className="text-xs text-slate-500">{item.product.weightKg} kg/ea</p>
                                                 </div>
                                             </div>
                                         ))}
