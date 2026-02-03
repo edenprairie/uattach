@@ -145,59 +145,61 @@ export function CheckoutForm() {
                     <label htmlFor="zip" className="text-sm font-medium text-slate-700">ZIP Code</label>
                     <input required name="zip" value={formData.zip} onChange={handleChange} type="text" pattern="\d{5}(-\d{4})?" title="5 digit zip code" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400" />
                 </div>
-                <div className="pt-4 border-t border-slate-100">
-                    <h2 className="text-xl font-bold text-slate-900 mb-6">Payment Details <span className="text-sm font-normal text-slate-500">(Mock Payment)</span></h2>
+            </div>
 
-                    <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700">Card Number</label>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="0000 0000 0000 0000"
-                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all pl-12 text-slate-900 placeholder:text-slate-400"
-                                    maxLength={19}
-                                />
-                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-                                </div>
+            <div className="pt-4 border-t border-slate-100">
+                <h2 className="text-xl font-bold text-slate-900 mb-6">Payment Details <span className="text-sm font-normal text-slate-500">(Mock Payment)</span></h2>
+
+                <div className="space-y-4 bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-slate-700">Card Number</label>
+                        <div className="relative">
+                            <input
+                                type="text"
+                                placeholder="0000 0000 0000 0000"
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all pl-12 text-slate-900 placeholder:text-slate-400"
+                                maxLength={19}
+                            />
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">Expiry Date</label>
-                                <input type="text" placeholder="MM / YY" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400" maxLength={5} />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-700">CVC</label>
-                                <div className="relative">
-                                    <input type="text" placeholder="123" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all pl-10 text-slate-900 placeholder:text-slate-400" maxLength={4} />
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                                    </div>
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">Expiry Date</label>
+                            <input type="text" placeholder="MM / YY" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-slate-900 placeholder:text-slate-400" maxLength={5} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-slate-700">CVC</label>
+                            <div className="relative">
+                                <input type="text" placeholder="123" className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all pl-10 text-slate-900 placeholder:text-slate-400" maxLength={4} />
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div className="pt-4">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
-                    >
-                        {loading ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Processing...
-                            </>
-                        ) : (
-                            `Submit Order`
-                        )}
-                    </button>
-                </div>
+            <div className="pt-4">
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+                >
+                    {loading ? (
+                        <>
+                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            Processing...
+                        </>
+                    ) : (
+                        `Submit Order`
+                    )}
+                </button>
+            </div>
         </form>
     );
 }
