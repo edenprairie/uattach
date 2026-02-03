@@ -12,6 +12,9 @@ interface CartContextType {
     updateQuantity: (productId: string, quantity: number) => void;
     clearCart: () => void;
     validation: { valid: boolean; message?: string };
+    isCartOpen: boolean;
+    openCart: () => void;
+    closeCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -20,6 +23,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const [items, setItems] = useState<OrderItem[]>([]);
     const [containers, setContainers] = useState<Container[]>([]);
     const [validation, setValidation] = useState<{ valid: boolean; message?: string }>({ valid: true });
+    const [isCartOpen, setIsCartOpen] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        const saved = localStorage.getItem('uattach-cart');
+        if (saved) {
+            try {
+                setItems(JSON.parse(saved));
+            } catch (e) {
+                console.error('Failed to parse cart', e);
+            }
+        }
+        setIsLoaded(true);
+    }, []);
+
+    // Save to localStorage whenever items change
+    useEffect(() => {
+        if (isLoaded) {
+            localStorage.setItem('uattach-cart', JSON.stringify(items));
+        }
+    }, [items, isLoaded]);
 
     // Recalculate containers whenever items change
     useEffect(() => {
@@ -40,6 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             }
             return [...prev, { product, quantity }];
         });
+        setIsCartOpen(true); // Open cart when adding item
     };
 
     const removeFromCart = (productId: string) => {
@@ -57,6 +83,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
 
     const clearCart = () => setItems([]);
+    const openCart = () => setIsCartOpen(true);
+    const closeCart = () => setIsCartOpen(false);
 
     return (
         <CartContext.Provider value={{
@@ -66,7 +94,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             removeFromCart,
             updateQuantity,
             clearCart,
-            validation
+            validation,
+            isCartOpen,
+            openCart,
+            closeCart
         }}>
             {children}
         </CartContext.Provider>

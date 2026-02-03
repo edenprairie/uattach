@@ -1,10 +1,14 @@
-"use client";
-
 import { useCart } from "@/context/CartContext";
-import { CONTAINER_MAX_WEIGHT_KG } from "@/lib/containerLogic";
 
-export function OrderSummary() {
-    const { containers, validation, items } = useCart();
+import { useRouter } from 'next/navigation';
+
+interface OrderSummaryProps {
+    showCheckoutButton?: boolean;
+}
+
+export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
+    const { containers, validation, items, closeCart } = useCart();
+    const router = useRouter();
 
     if (items.length === 0) {
         return (
@@ -30,7 +34,7 @@ export function OrderSummary() {
                         <div className="w-full bg-slate-200 rounded-full h-2.5 mb-3">
                             <div
                                 className={`h-2.5 rounded-full ${container.totalWeightKg > container.maxWeightKg ? 'bg-red-500' :
-                                        container.totalWeightKg < 1000 ? 'bg-orange-400' : 'bg-green-500'
+                                    container.totalWeightKg < 1000 ? 'bg-orange-400' : 'bg-green-500'
                                     }`}
                                 style={{ width: `${Math.min(100, (container.totalWeightKg / container.maxWeightKg) * 100)}%` }}
                             />
@@ -55,18 +59,24 @@ export function OrderSummary() {
                 </div>
             )}
 
-            <div className="border-t border-slate-100 pt-4 mt-6">
-                <div className="flex justify-between font-bold text-slate-900 text-lg mb-4">
-                    <span>Total Containers</span>
-                    <span>{containers.length}</span>
+            {showCheckoutButton && (
+                <div className="border-t border-slate-100 pt-4 mt-6">
+                    <div className="flex justify-between font-bold text-slate-900 text-lg mb-4">
+                        <span>Total Containers</span>
+                        <span>{containers.length}</span>
+                    </div>
+                    <button
+                        disabled={!validation.valid}
+                        onClick={() => {
+                            closeCart();
+                            router.push('/checkout');
+                        }}
+                        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200"
+                    >
+                        Proceed to Checkout
+                    </button>
                 </div>
-                <button
-                    disabled={!validation.valid}
-                    className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200"
-                >
-                    Proceed to Checkout
-                </button>
-            </div>
+            )}
         </div>
     );
 }
