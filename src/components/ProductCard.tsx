@@ -39,27 +39,37 @@ export function ProductCard({ product, onOpenPdf }: ProductCardProps) {
                 <p className="text-sm text-slate-500 mb-4 line-clamp-2">{product.description}</p>
 
                 <div className="flex items-center gap-2 mb-4">
-                    {/* Quantity selector */}
-                    <div className="flex items-center border border-slate-200 rounded-lg">
-                        <button
-                            onClick={() => setQty(Math.max(1, qty - 1))}
-                            className="px-3 py-1 hover:bg-slate-50 text-slate-600"
-                        >-</button>
-                        <span className="w-8 text-center text-sm font-semibold text-slate-900">{qty}</span>
-                        <button
-                            onClick={() => setQty(qty + 1)}
-                            className="px-3 py-1 hover:bg-slate-50 text-slate-600"
-                        >+</button>
-                    </div>
+                    {/* Quantity selector - Only show if logged in */}
+                    {user ? (
+                        <div className="flex items-center border border-slate-200 rounded-lg">
+                            <button
+                                onClick={() => setQty(Math.max(1, qty - 1))}
+                                className="px-3 py-1 hover:bg-slate-50 text-slate-600"
+                            >-</button>
+                            <span className="w-8 text-center text-sm font-semibold text-slate-900">{qty}</span>
+                            <button
+                                onClick={() => setQty(qty + 1)}
+                                className="px-3 py-1 hover:bg-slate-50 text-slate-600"
+                            >+</button>
+                        </div>
+                    ) : (
+                        <div className="h-[34px]" /> /* Spacer to keep layout stable if needed, or remove */
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => addToCart(product, qty)}
-                        className="flex-1 bg-slate-900 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-slate-800 transition-colors active:scale-95 transform"
-                    >
-                        Add to Order
-                    </button>
+                    {user ? (
+                        <button
+                            onClick={() => addToCart(product, qty)}
+                            className="flex-1 bg-slate-900 text-white text-sm font-medium py-2.5 rounded-lg hover:bg-slate-800 transition-colors active:scale-95 transform"
+                        >
+                            Add to Order
+                        </button>
+                    ) : (
+                        <Link href="/login" className="flex-1 bg-slate-100 text-slate-600 text-center text-sm font-medium py-2.5 rounded-lg hover:bg-slate-200 transition-colors">
+                            Log in to Order
+                        </Link>
+                    )}
 
                     <button
                         onClick={() => onOpenPdf(product.pdfUrl, product.name)}
