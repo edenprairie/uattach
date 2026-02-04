@@ -69,7 +69,6 @@ export async function createOrder(data: any) {
             userId: data.userId, // Optional
             totalWeightKg: data.totalWeightKg,
             splitStrategy: data.splitStrategy,
-            addressId: '', // Will be connected/created
             shippingAddress: {
                 create: {
                     firstName: data.shippingAddress.firstName,
