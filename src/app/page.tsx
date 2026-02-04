@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProductCard } from '@/components/ProductCard';
 import { OrderSummary } from '@/components/OrderSummary';
 import { PRODUCTS } from '@/lib/mockData';
@@ -13,6 +13,19 @@ export default function Home() {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [currentPdf, setCurrentPdf] = useState<{ url: string, title: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [products, setProducts] = useState(PRODUCTS); // Default to mock, replace on load
+
+  useEffect(() => {
+    // Client-side fetch of DB products
+    // In a larger app, we'd pass this as server props or use SWR/React Query
+    import('@/app/actions').then(({ getProducts }) => {
+      getProducts().then((dbProducts) => {
+        if (dbProducts && dbProducts.length > 0) {
+          setProducts(dbProducts as any); // Type assertion needed due to Prisma vs App types
+        }
+      });
+    });
+  }, []);
 
   const handleOpenPdf = (url: string, title: string) => {
     setCurrentPdf({ url, title });
@@ -24,7 +37,7 @@ export default function Home() {
     setCurrentPdf(null);
   };
 
-  const filteredProducts = PRODUCTS.filter(product => {
+  const filteredProducts = products.filter(product => {
     const query = searchQuery.toLowerCase();
     return (
       product.name.toLowerCase().includes(query) ||

@@ -63,8 +63,12 @@ export default function UserManagementPage() {
             createUser(newUser);
 
             // Refresh list
-            const stored = localStorage.getItem('uattach-users');
-            if (stored) setUsers(JSON.parse(stored));
+            createUser(newUser);
+
+            // Refresh list from DB
+            import('@/app/actions').then(({ getUsers }) => {
+                getUsers().then((dbUsers) => setUsers(dbUsers as any));
+            });
 
             // Reset form
             setIsCreating(false);

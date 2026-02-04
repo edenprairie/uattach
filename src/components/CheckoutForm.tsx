@@ -45,32 +45,51 @@ export function CheckoutForm() {
         e.preventDefault();
         setLoading(true);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        try {
+            const { createOrder } = await import('@/app/actions');
 
-        // Create Order Object
-        const orderId = Math.floor(Math.random() * 1000000).toString().padStart(6, '0');
-        const totalWeight = containers.reduce((sum, c) => sum + c.totalWeightKg, 0);
+            const totalWeight = containers.reduce((sum, c) => sum + c.totalWeightKg, 0);
 
-        const newOrder: Order = {
-            id: orderId,
-            userId: user?.id, // Attach User ID if logged in
-            date: new Date().toISOString(),
-            status: 'pending',
-            items: items,
-            containers: containers,
-            shippingAddress: formData,
-            totalWeightKg: totalWeight,
-            splitStrategy: 'weight_optimized'
-        };
+            // Prepare Order Data for DB
+            // Note: In real app, we validate items against DB price/stock here
+            const orderPayload = {
+                userId: user?.id,
+                totalWeightKg: totalWeight,
+                splitStrategy: 'weight_optimized',
+                shippingAddress: formData,
+                items: items.map(item => ({
+                    productId: item.product.id,
+                    quantity: item.quantity
+                }))
+            };
 
-        // Save to LocalStorage
-        const existingOrders = JSON.parse(localStorage.getItem('uattach-orders') || '[]');
-        localStorage.setItem('uattach-orders', JSON.stringify([newOrder, ...existingOrders]));
+            const newOrder = await createOrder(orderPayload);
 
-        clearCart();
-        router.push(`/checkout/success?orderId=${orderId}`);
-        setLoading(false);
+            // Also save to localStorage for fallback/history view compatibility 
+            // until we fully migrate OrderHistory page to DB
+            const existingOrders = JSON.parse(localStorage.getItem('uattach-orders') || '[]');
+            // Adapt DB order back to local type roughly for display if needed
+            const localOrderMock: Order = {
+                id: newOrder.id,
+                userId: user?.id,
+                date: newOrder.date.toISOString(),
+                status: 'pending',
+                items: items, // Keep full items for local display context
+                containers: containers, // DB doesn't verify containers yet, we trust logic
+                shippingAddress: formData,
+                totalWeightKg: totalWeight,
+                splitStrategy: 'weight_optimized'
+            };
+            localStorage.setItem('uattach-orders', JSON.stringify([localOrderMock, ...existingOrders]));
+
+            clearCart();
+            router.push(`/checkout/success?orderId=${newOrder.id}`);
+        } catch (error) {
+            console.error('Order creation failed:', error);
+            alert('Failed to place order. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

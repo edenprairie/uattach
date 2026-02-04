@@ -18,35 +18,29 @@ export default function OrdersPage() {
     const { user } = useAuth();
 
     useEffect(() => {
-        const saved = localStorage.getItem('uattach-orders');
-        if (saved) {
+        const fetchOrders = async () => {
             try {
-                const parsed = JSON.parse(saved) as Order[];
-                // Filter by user if logged in, otherwise show none (or all? User said "my orders can associate". Let's show only user's orders if logged in, or maybe local storage is shared so show all for guest/demo purposes if no ID found, but safer to filter).
-                // Actually, for this demo, let's show orders that match the user ID, *OR* orders that have no user ID (guest orders placed on this machine).
-                const userOrders = parsed.filter(o => {
-                    if (user) return o.userId === user.id;
-                    return true; // If not logged in, show all (guest mode behavior for local dev) or strictly enforce login. 
-                    // Given the prompt "my orders can associate to the specific logged in user", let's be strict:
-                    // If user is logged in, show ONLY their orders.
-                });
-
-                // Correction: The prompt implies a strict association. 
-                // Let's filter: if (user) show o.userId === user.id. 
-                // However, guest orders (userId undefined) should probably still be visible if we are just browsing as guest.
-                // Admin sees all.
-                const filtered = parsed.filter(o => {
-                    if (user?.role === 'admin') return true;
-                    if (user) return o.userId === user.id;
-                    return !o.userId; // Guest view
-                });
-
-                setOrders(filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+                const { getUserOrders } = await import('@/app/actions');
+                // If user is logged in, use their ID. If not (guest), maybe show empty?
+                // For this demo, let's only show if logged in to avoid complexity
+                if (user?.id) {
+                    const dbOrders = await getUserOrders(user.id);
+                    setOrders(dbOrders as any);
+                } else {
+                    setOrders([]);
+                }
             } catch (e) {
-                console.error('Failed to parse orders', e);
+                console.error('Failed to fetch orders', e);
+            } finally {
+                setLoading(false);
             }
+        };
+
+        if (user) {
+            fetchOrders();
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, [user]);
 
     if (loading) {
