@@ -88,12 +88,16 @@ export function CheckoutForm() {
             console.error('Order creation failed:', error);
             const msg = error instanceof Error ? error.message : 'Failed to place order';
 
-            // Auto-logout if session is stale (invalid User ID)
+            // Auto-logout/clear if data is stale (Invalid User OR Invalid Products)
             if (msg.includes('Invalid User ID') || msg.includes('Constraint violation') || msg.includes('prisma.order.create')) {
-                alert('Your session has expired or is invalid. Please log in again.');
-                // Clear local storage and auth state
+                alert('Your cart contains items from an old session. We need to clear your cart and log you out to refresh the data.');
+
+                // Clear everything
+                clearCart();
                 localStorage.removeItem('uattach-user');
-                window.location.href = '/login'; // Force reload/redirect
+                localStorage.removeItem('uattach-cart');
+
+                window.location.href = '/login';
                 return;
             }
 
