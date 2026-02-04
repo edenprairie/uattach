@@ -115,12 +115,24 @@ export async function createOrder(data: any) {
 }
 
 export async function getUserOrders(userId: string) {
+    // Check if user is admin
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true }
+    });
+
+    const isAdmin = user?.role === 'admin';
+
+    // If admin, fetch ALL orders. If not, fetch only their orders.
+    const whereClause = isAdmin ? {} : { userId };
+
     return await prisma.order.findMany({
-        where: { userId },
+        where: whereClause,
         include: {
             items: { include: { product: true } },
             containers: true,
-            shippingAddress: true
+            shippingAddress: true,
+            user: true // Include user details so admin sees who placed the order
         },
         orderBy: { createdAt: 'desc' }
     });
