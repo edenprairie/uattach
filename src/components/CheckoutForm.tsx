@@ -86,7 +86,7 @@ export function CheckoutForm() {
             router.push(`/checkout/success?orderId=${newOrder.id}`);
         } catch (error) {
             console.error('Order creation failed:', error);
-            alert('Failed to place order. Please try again.');
+            alert(error instanceof Error ? error.message : 'Failed to place order. please try again.');
         } finally {
             setLoading(false);
         }

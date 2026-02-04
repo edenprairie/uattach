@@ -63,39 +63,46 @@ export async function getProducts() {
 // --- Order Actions ---
 
 export async function createOrder(data: any) {
-    // 1. Transaction to create Order + Items + Address
-    const order = await prisma.order.create({
-        data: {
-            userId: data.userId, // Optional
-            totalWeightKg: data.totalWeightKg,
-            splitStrategy: data.splitStrategy,
-            shippingAddress: {
-                create: {
-                    firstName: data.shippingAddress.firstName,
-                    lastName: data.shippingAddress.lastName,
-                    company: data.shippingAddress.company,
-                    email: data.shippingAddress.email,
-                    phone: data.shippingAddress.phone,
-                    line1: data.shippingAddress.line1,
-                    line2: data.shippingAddress.line2,
-                    city: data.shippingAddress.city,
-                    state: data.shippingAddress.state,
-                    zip: data.shippingAddress.zip,
-                    // If user is logged in, link address to user too? 
-                    // For now, simple order-specific address
+    try {
+        // 1. Transaction to create Order + Items + Address
+        const order = await prisma.order.create({
+            data: {
+                userId: data.userId, // Optional - if provided, MUST exist in User table
+                totalWeightKg: data.totalWeightKg,
+                splitStrategy: data.splitStrategy,
+                shippingAddress: {
+                    create: {
+                        firstName: data.shippingAddress.firstName,
+                        lastName: data.shippingAddress.lastName,
+                        company: data.shippingAddress.company,
+                        email: data.shippingAddress.email,
+                        phone: data.shippingAddress.phone,
+                        line1: data.shippingAddress.line1,
+                        line2: data.shippingAddress.line2,
+                        city: data.shippingAddress.city,
+                        state: data.shippingAddress.state,
+                        zip: data.shippingAddress.zip,
+                    }
+                },
+                items: {
+                    create: data.items.map((item: any) => ({
+                        productId: item.productId,
+                        quantity: item.quantity
+                    }))
                 }
             },
-            items: {
-                create: data.items.map((item: any) => ({
-                    productId: item.productId,
-                    quantity: item.quantity
-                }))
-            }
-        },
-        include: { items: true, shippingAddress: true }
-    });
+            include: { items: true, shippingAddress: true }
+        });
 
-    return order;
+        return order;
+    } catch (e: any) {
+        console.error('SERVER ACTION ERROR: createOrder', e);
+        // Check for specific Prisma errors
+        if (e.code === 'P2003') {
+            throw new Error('Invalid User ID. Please log out and log in again.');
+        }
+        throw new Error(`Order failed: ${e.message}`);
+    }
 }
 
 export async function getUserOrders(userId: string) {
