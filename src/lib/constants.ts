@@ -50,3 +50,6 @@ export const US_STATES = [
     { name: 'Wisconsin', code: 'WI' },
     { name: 'Wyoming', code: 'WY' }
 ];
+
+export const CONTAINER_MAX_WEIGHT_KG = 22000;
+export const CONTAINER_MIN_WEIGHT_KG = 18000;

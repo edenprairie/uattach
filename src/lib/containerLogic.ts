@@ -1,8 +1,5 @@
 import { OrderItem, Container } from '@/lib/types';
-
-// Constants
-export const CONTAINER_MAX_WEIGHT_KG = 22000; // 22 Tonnes standard 20ft container
-export const CONTAINER_MIN_WEIGHT_KG = 1000;  // Minimum weight to justify a container
+import { CONTAINER_MAX_WEIGHT_KG, CONTAINER_MIN_WEIGHT_KG } from '@/lib/constants';
 
 export function calculateContainers(items: OrderItem[]): Container[] {
     const containers: Container[] = [];
