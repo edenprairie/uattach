@@ -7,7 +7,7 @@ interface OrderSummaryProps {
 }
 
 export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
-    const { containers, validation, items, closeCart } = useCart();
+    const { containers, validation, items, closeCart, updateQuantity } = useCart();
     const router = useRouter();
 
     if (items.length === 0) {
@@ -23,11 +23,54 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
             <h2 className="text-xl font-bold text-slate-900 mb-4">Order Summary</h2>
 
             <div className="space-y-6 mb-6">
+                {/* Editable Items List */}
+                <div className="border border-slate-200 rounded-lg overflow-hidden">
+                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                        <h3 className="font-bold text-slate-700">Cart Items</h3>
+                    </div>
+                    <ul className="divide-y divide-slate-100">
+                        {items.map((item) => (
+                            <li key={item.product.id} className="p-4 flex flex-col gap-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-semibold text-slate-900">{item.product.name}</h4>
+                                        <p className="text-xs text-slate-500">{item.product.weightKg} kg/unit</p>
+                                    </div>
+                                    <span className="font-medium text-slate-900">
+                                        {(item.quantity * item.product.weightKg).toLocaleString()} kg
+                                    </span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center border border-slate-200 rounded-lg">
+                                        <button
+                                            onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                                            className="px-3 py-1 hover:bg-slate-50 text-slate-600 border-r border-slate-200 transition-colors"
+                                        >−</button>
+                                        <span className="w-10 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
+                                        <button
+                                            onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                                            className="px-3 py-1 hover:bg-slate-50 text-slate-600 border-l border-slate-200 transition-colors"
+                                        >+</button>
+                                    </div>
+                                    <button
+                                        onClick={() => updateQuantity(item.product.id, 0)}
+                                        className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <h3 className="font-bold text-slate-900 pt-2">Container Organization</h3>
+
                 {containers.map((container, idx) => (
                     <div key={container.id} className="border border-slate-100 rounded-lg p-4 bg-slate-50">
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="font-bold text-slate-700">Container #{container.number}</h3>
-                            <span className="text-sm text-slate-500">{container.totalWeightKg} / {container.maxWeightKg} kg</span>
+                            <span className="text-sm text-slate-500">{container.totalWeightKg.toLocaleString()} / {container.maxWeightKg.toLocaleString()} kg</span>
                         </div>
 
                         {/* Visual Bar */}
@@ -44,7 +87,7 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                             {container.items.map((item, i) => (
                                 <li key={i} className="flex justify-between">
                                     <span>{item.quantity}x {item.product.name}</span>
-                                    <span>{item.quantity * item.product.weightKg} kg</span>
+                                    <span>{(item.quantity * item.product.weightKg).toLocaleString()} kg</span>
                                 </li>
                             ))}
                         </ul>
