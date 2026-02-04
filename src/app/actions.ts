@@ -125,3 +125,16 @@ export async function getUserOrders(userId: string) {
         orderBy: { createdAt: 'desc' }
     });
 }
+
+export async function getOrder(orderId: string) {
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: {
+            items: { include: { product: true } },
+            containers: true,
+            shippingAddress: true,
+            user: true // Include user for admin checks if needed
+        }
+    });
+    return order;
+}
