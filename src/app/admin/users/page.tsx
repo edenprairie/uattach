@@ -31,12 +31,17 @@ export default function UserManagementPage() {
         }
 
         // Load users from localStorage
-        const loadUsers = () => {
-            const stored = localStorage.getItem('uattach-users');
-            if (stored) {
-                setUsers(JSON.parse(stored));
+        // Load users from DB
+        const loadUsers = async () => {
+            try {
+                const { getUsers } = await import('@/app/actions');
+                const dbUsers = await getUsers();
+                setUsers(dbUsers as any);
+            } catch (err) {
+                console.error('Failed to load users', err);
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
 
         loadUsers();
