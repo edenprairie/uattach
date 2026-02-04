@@ -88,8 +88,12 @@ export function CheckoutForm() {
             console.error('Order creation failed:', error);
             const msg = error instanceof Error ? error.message : 'Failed to place order';
 
-            // Auto-logout/clear if data is stale (Invalid User OR Invalid Products)
-            if (msg.includes('Invalid User ID') || msg.includes('Constraint violation') || msg.includes('prisma.order.create')) {
+            // Only Auto-logout for Foreign Key constraints (Invalid User/Product)
+            // P2003 is Foreign Key Constraint Violation in Prisma
+            // We also check for 'Invalid User ID' which we manually throw in actions.ts
+            const isFKError = msg.includes('Invalid User ID') || msg.includes('Constraint violation');
+
+            if (isFKError) {
                 alert('Your cart contains items from an old session. We need to clear your cart and log you out to refresh the data.');
 
                 // Clear everything
@@ -101,7 +105,8 @@ export function CheckoutForm() {
                 return;
             }
 
-            alert(msg);
+            // Otherwise show the real error (e.g. Timeout)
+            alert(`Order Error: ${msg}`);
         } finally {
             setLoading(false);
         }
