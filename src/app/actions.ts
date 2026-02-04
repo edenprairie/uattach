@@ -119,7 +119,8 @@ export async function getUserOrders(userId: string) {
         where: { userId },
         include: {
             items: { include: { product: true } },
-            containers: true
+            containers: true,
+            shippingAddress: true
         },
         orderBy: { createdAt: 'desc' }
     });
