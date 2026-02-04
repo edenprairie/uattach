@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  username        String           @unique
+  email           String?          @unique
+  password        String // For mock auth (stored plainly for this demo, usually hashed)
+  role            String // 'admin', 'user', 'buyer'
+  shippingAddress ShippingAddress?
+  orders          Order[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  category    String
+  description String
+  weightKg    Float
+  pdfUrl      String
+  imageUrl    String?
+  features    String[]
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  user            User?           @relation(fields: [userId], references: [id])
+  userId          String?
+  date            DateTime        @default(now())
+  status          String          @default("pending") // 'pending', 'processing', 'shipped'
+  totalWeightKg   Float
+  splitStrategy   String // 'weight_optimized', 'simple'
+  shippingAddress ShippingAddress @relation(fields: [addressId], references: [id])
+  addressId       String          @unique
+  items           OrderItem[]
+  containers      Container[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId     String
+  product     Product  @relation(fields: [productId], references: [id])
+  productId   String
+  quantity    Int
+  container   Container? @relation(fields: [containerId], references: [id]) // Optional link to specific container
+  containerId String?
+}
+
+model Container {
+  id            String      @id @default(cuid())
+  order         Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId       String
+  number        Int
+  totalWeightKg Float
+  maxWeightKg   Float
+  items         OrderItem[]
+}
+
+model ShippingAddress {
+  id        String @id @default(cuid())
+  user      User?  @relation(fields: [userId], references: [id])
+  userId    String? @unique
+  order     Order?
+  firstName String
+  lastName  String
+  company   String?
+  email     String
+  phone     String
+  line1     String
+  line2     String?
+  city      String
+  state     String
+  zip       String
+}
