@@ -45,7 +45,7 @@ export function ProductCard({ product, onOpenPdf }: ProductCardProps) {
                             onClick={() => setQty(Math.max(1, qty - 1))}
                             className="px-3 py-1 hover:bg-slate-50 text-slate-600"
                         >-</button>
-                        <span className="w-8 text-center text-sm font-medium">{qty}</span>
+                        <span className="w-8 text-center text-sm font-semibold text-slate-900">{qty}</span>
                         <button
                             onClick={() => setQty(qty + 1)}
                             className="px-3 py-1 hover:bg-slate-50 text-slate-600"
