@@ -1,6 +1,8 @@
 import { Product } from '@/lib/types';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 const PDFThumbnail = dynamic(() => import('./PDFThumbnail'), {
@@ -15,6 +17,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onOpenPdf }: ProductCardProps) {
     const { addToCart } = useCart();
+    const { user } = useAuth();
     const [qty, setQty] = useState(1);
 
     return (
