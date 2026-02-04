@@ -84,9 +84,20 @@ export function CheckoutForm() {
 
             clearCart();
             router.push(`/checkout/success?orderId=${newOrder.id}`);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Order creation failed:', error);
-            alert(error instanceof Error ? error.message : 'Failed to place order. please try again.');
+            const msg = error instanceof Error ? error.message : 'Failed to place order';
+
+            // Auto-logout if session is stale (invalid User ID)
+            if (msg.includes('Invalid User ID') || msg.includes('Constraint violation') || msg.includes('prisma.order.create')) {
+                alert('Your session has expired or is invalid. Please log in again.');
+                // Clear local storage and auth state
+                localStorage.removeItem('uattach-user');
+                window.location.href = '/login'; // Force reload/redirect
+                return;
+            }
+
+            alert(msg);
         } finally {
             setLoading(false);
         }
