@@ -65,32 +65,41 @@ export async function getProducts() {
 export async function createOrder(data: any) {
     try {
         // 1. Transaction to create Order + Items + Address
-        const order = await prisma.order.create({
-            data: {
-                userId: data.userId, // Optional - if provided, MUST exist in User table
-                totalWeightKg: data.totalWeightKg,
-                splitStrategy: data.splitStrategy,
-                shippingAddress: {
-                    create: {
-                        firstName: data.shippingAddress.firstName,
-                        lastName: data.shippingAddress.lastName,
-                        company: data.shippingAddress.company,
-                        email: data.shippingAddress.email,
-                        phone: data.shippingAddress.phone,
-                        line1: data.shippingAddress.line1,
-                        line2: data.shippingAddress.line2,
-                        city: data.shippingAddress.city,
-                        state: data.shippingAddress.state,
-                        zip: data.shippingAddress.zip,
-                    }
-                },
-                items: {
-                    create: data.items.map((item: any) => ({
-                        productId: item.productId,
-                        quantity: item.quantity
-                    }))
+        const orderData: any = {
+            totalWeightKg: data.totalWeightKg,
+            splitStrategy: data.splitStrategy,
+            shippingAddress: {
+                create: {
+                    firstName: data.shippingAddress.firstName,
+                    lastName: data.shippingAddress.lastName,
+                    company: data.shippingAddress.company,
+                    email: data.shippingAddress.email,
+                    phone: data.shippingAddress.phone,
+                    line1: data.shippingAddress.line1,
+                    line2: data.shippingAddress.line2,
+                    city: data.shippingAddress.city,
+                    state: data.shippingAddress.state,
+                    zip: data.shippingAddress.zip,
                 }
             },
+            items: {
+                create: data.items.map((item: any) => ({
+                    productId: item.productId,
+                    quantity: item.quantity
+                }))
+            }
+        };
+
+        // Explicitly connect the user if ID is provided
+        // This is safer than scalar binding for optional relations
+        if (data.userId) {
+            orderData.user = {
+                connect: { id: data.userId }
+            };
+        }
+
+        const order = await prisma.order.create({
+            data: orderData,
             include: { items: true, shippingAddress: true }
         });
 
