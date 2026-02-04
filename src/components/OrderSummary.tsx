@@ -46,7 +46,19 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                                             className="px-3 py-1 hover:bg-slate-50 text-slate-600 border-r border-slate-200 transition-colors"
                                         >−</button>
-                                        <span className="w-10 text-center text-sm font-semibold text-slate-900">{item.quantity}</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            value={item.quantity}
+                                            onChange={(e) => {
+                                                const val = parseInt(e.target.value);
+                                                if (!isNaN(val) && val > 0) {
+                                                    updateQuantity(item.product.id, val);
+                                                }
+                                            }}
+                                            onFocus={(e) => e.target.select()}
+                                            className="w-14 text-center text-sm font-semibold text-slate-900 border-none focus:ring-0 p-1 appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
                                         <button
                                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                                             className="px-3 py-1 hover:bg-slate-50 text-slate-600 border-l border-slate-200 transition-colors"
