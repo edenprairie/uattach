@@ -35,18 +35,18 @@ export function Header() {
                             <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors">
                                 Sign Out
                             </button>
+                            <button
+                                onClick={openCart}
+                                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
+                            >
+                                Cart ({cartCount})
+                            </button>
                         </>
                     ) : (
                         <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
                             Sign In
                         </Link>
                     )}
-                    <button
-                        onClick={openCart}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-                    >
-                        Cart ({cartCount})
-                    </button>
                 </div>
             </div>
         </header>
