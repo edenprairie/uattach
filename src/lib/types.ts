@@ -26,7 +26,8 @@ export interface User {
     id: string;
     username: string;
     email?: string;
-    role: 'admin' | 'user';
+    password?: string; // For mock auth
+    role: 'admin' | 'user' | 'buyer';
     shippingAddress?: ShippingAddress;
 }
 

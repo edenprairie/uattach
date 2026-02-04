@@ -9,6 +9,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<boolean>;
     logout: () => void;
     setUser: (user: User | null) => void;
+    createUser: (user: User) => void;
     isAuthenticated: boolean;
 }
 
@@ -18,40 +19,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
 
-    // Check localStorage on mount
+    // Check localStorage on mount and seed if empty
     useEffect(() => {
         const savedUser = localStorage.getItem('uattach-user');
         if (savedUser) {
             setUser(JSON.parse(savedUser));
         }
+
+        // Seed users or repair default users
+        const storedUsers = localStorage.getItem('uattach-users');
+        let users: User[] = storedUsers ? JSON.parse(storedUsers) : [];
+        let updated = false;
+
+        const defaults = [
+            {
+                id: 'admin-user-001',
+                username: 'admin',
+                email: 'admin@uattach.com',
+                password: 'Admin#987',
+                role: 'admin' as const
+            },
+            {
+                id: 'demo-user-001',
+                username: 'demo',
+                email: 'demo@uattach.com',
+                password: 'Demo#123',
+                role: 'user' as const
+            }
+        ];
+
+        // Ensure defaults exist and have correct credentials
+        defaults.forEach(def => {
+            const index = users.findIndex(u => u.id === def.id);
+            if (index === -1) {
+                users.push(def);
+                updated = true;
+            } else if (users[index].username !== def.username) {
+                // Fix potential bad seed data from previous version
+                users[index] = def;
+                updated = true;
+            }
+        });
+
+        if (updated) {
+            localStorage.setItem('uattach-users', JSON.stringify(users));
+        }
     }, []);
 
     const login = async (username: string, password: string): Promise<boolean> => {
-        // Mock Login Logic
-        // Admin Login
-        if (username.toLowerCase() === 'admin' && password === 'Admin#987') {
-            const adminUser: User = {
-                id: 'admin-user-001',
-                username: 'Administrator',
-                email: 'admin@uattach.com',
-                role: 'admin'
-            };
-            setUser(adminUser);
-            localStorage.setItem('uattach-user', JSON.stringify(adminUser));
-            return true;
-        }
+        // Simulate API delay
+        await new Promise(resolve => setTimeout(resolve, 500));
 
-        // Demo User Login
-        if (username.toLowerCase() === 'demo' && password === 'Demo#123') {
-            const newUser: User = {
-                id: 'demo-user-001',
-                username: 'Demo User',
-                email: 'demo@uattach.com',
-                role: 'user'
-            };
-            setUser(newUser);
-            localStorage.setItem('uattach-user', JSON.stringify(newUser));
-            return true;
+        const storedUsers = localStorage.getItem('uattach-users');
+        if (storedUsers) {
+            const users: User[] = JSON.parse(storedUsers);
+            // Case insensitive username match
+            const found = users.find(u =>
+                u.username.toLowerCase() === username.toLowerCase() ||
+                (u.email && u.email.toLowerCase() === username.toLowerCase()) // Allow login by email too
+            );
+
+            if (found && found.password === password) {
+                // Don't store password in session
+                const { password: _, ...safeUser } = found;
+                setUser(safeUser as User);
+                localStorage.setItem('uattach-user', JSON.stringify(safeUser));
+                return true;
+            }
         }
         return false;
     };
@@ -62,12 +96,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/login');
     };
 
+    const createUser = (newUser: User) => {
+        const storedUsers = localStorage.getItem('uattach-users');
+        const users: User[] = storedUsers ? JSON.parse(storedUsers) : [];
+
+        // Simple duplicate check
+        if (users.some(u => u.username.toLowerCase() === newUser.username.toLowerCase())) {
+            throw new Error('Username already exists');
+        }
+
+        users.push(newUser);
+        localStorage.setItem('uattach-users', JSON.stringify(users));
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
             login,
             logout,
             setUser,
+            createUser,
             isAuthenticated: !!user
         }}>
             {children}

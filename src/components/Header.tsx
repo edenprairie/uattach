@@ -21,6 +21,9 @@ export function Header() {
                         {user && (
                             <Link href="/orders" className="hover:text-slate-900 transition-colors">My Orders</Link>
                         )}
+                        {user && user.role === 'admin' && (
+                            <Link href="/admin/users" className="hover:text-purple-600 transition-colors">Users</Link>
+                        )}
                     </nav>
                 </div>
                 <div className="flex items-center gap-4">
