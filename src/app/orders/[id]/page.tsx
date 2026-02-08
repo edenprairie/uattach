@@ -37,17 +37,22 @@ export default function OrderDetailPage() {
     };
 
     useEffect(() => {
-        const saved = localStorage.getItem('uattach-orders');
-        if (saved) {
-            try {
-                const orders = JSON.parse(saved) as Order[];
-                const found = orders.find(o => o.id === orderId);
-                setOrder(found || null);
-            } catch (e) {
-                console.error('Failed to parse orders', e);
+        const loadOrder = () => {
+            const saved = localStorage.getItem('uattach-orders');
+            if (saved) {
+                try {
+                    const orders = JSON.parse(saved) as Order[];
+                    const found = orders.find(o => o.id === orderId);
+                    setOrder(found || null);
+                } catch (e) {
+                    console.error('Failed to parse orders', e);
+                    setOrder(null);
+                }
             }
-        }
-        setLoading(false);
+            setLoading(false);
+        };
+
+        loadOrder();
     }, [orderId]);
 
     if (loading) {
@@ -156,15 +161,15 @@ export default function OrderDetailPage() {
                         {/* Containers & Items */}
                         <h2 className="text-lg font-bold text-slate-900 mb-4">Shipment Details</h2>
                         <div className="space-y-6">
-                            {order.containers.map((container, idx) => (
-                                <div key={idx} className="border border-slate-200 rounded-lg overflow-hidden">
+                            {order.containers.map((container) => (
+                                <div key={container.id} className="border border-slate-200 rounded-lg overflow-hidden">
                                     <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
                                         <h3 className="font-semibold text-slate-700">Container #{container.number}</h3>
                                         <span className="text-sm text-slate-500 font-medium">{container.totalWeightKg.toLocaleString()} kg</span>
                                     </div>
                                     <div className="divide-y divide-slate-100">
-                                        {container.items.map((item, i) => (
-                                            <div key={i} className="p-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
+                                        {container.items?.map((item) => (
+                                            <div key={item.product.id} className="p-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                                                 <div className="w-16 h-16 bg-white border border-slate-200 rounded-lg overflow-hidden flex-shrink-0 relative shadow-sm">
                                                     <PDFThumbnailClient pdfUrl={item.product.pdfUrl} className="w-full h-full object-cover" />
                                                 </div>

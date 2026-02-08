@@ -26,7 +26,7 @@ export function Hero() {
                         Built to <span className="text-white">Last.</span>
                     </h1>
                     <p className="text-lg text-slate-300 mb-8 max-w-xl leading-relaxed">
-                        Maximize your machinery's potential with Uattach's high-grade, precision-engineered buckets and extensions. Designed for the toughest jobs on earth.
+                        Maximize your machinery&apos;s potential with Uattach&apos;s high-grade, precision-engineered buckets and extensions. Designed for the toughest jobs on earth.
                     </p>
                     <div className="flex gap-4">
                         <button className="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-all hover:scale-105 shadow-lg shadow-blue-900/50">

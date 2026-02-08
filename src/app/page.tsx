@@ -16,12 +16,19 @@ export default function Home() {
   const [products, setProducts] = useState(PRODUCTS); // Default to mock, replace on load
 
   useEffect(() => {
-    // Client-side fetch of DB products
-    // In a larger app, we'd pass this as server props or use SWR/React Query
     import('@/app/actions').then(({ getProducts }) => {
       getProducts().then((dbProducts) => {
         if (dbProducts && dbProducts.length > 0) {
-          setProducts(dbProducts as any); // Type assertion needed due to Prisma vs App types
+          setProducts(dbProducts.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category,
+            description: p.description,
+            weightKg: p.weightKg,
+            pdfUrl: p.pdfUrl,
+            imageUrl: p.imageUrl,
+            features: p.features
+          })));
         }
       });
     });
@@ -78,7 +85,7 @@ export default function Home() {
                     </svg>
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">No products found</h3>
-                  <p className="text-slate-500">We couldn't find matches for "{searchQuery}"</p>
+                  <p className="text-slate-500">We couldn&apos;t find matches for &quot;{searchQuery}&quot;</p>
                   <button
                     onClick={() => setSearchQuery('')}
                     className="mt-4 text-blue-600 font-medium hover:underline"

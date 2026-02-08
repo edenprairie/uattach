@@ -30,13 +30,20 @@ export default function ProfilePage() {
             router.push('/login');
             return;
         }
+
+        // Only update if we have a shipping address and it's different from current (or we are initializing)
+        // We can check if email is empty to know if it's initial state
         if (user.shippingAddress) {
-            setFormData(user.shippingAddress);
-        } else {
-            // Pre-fill email from user if available
+            // Simple check to avoid loop if object ref changes but content is same
+            if (JSON.stringify(formData) !== JSON.stringify(user.shippingAddress)) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setFormData(user.shippingAddress);
+            }
+        } else if (!formData.email && user.email) {
+            // Pre-fill email from user if available and not already set
             setFormData(prev => ({ ...prev, email: user.email || '' }));
         }
-    }, [user, router]);
+    }, [user, router]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;

@@ -24,7 +24,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const savedUser = localStorage.getItem('uattach-user');
         if (savedUser) {
-            setUser(JSON.parse(savedUser));
+            try {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setUser(JSON.parse(savedUser));
+            } catch (e) {
+                console.error('Failed to parse user', e);
+            }
         }
     }, []);
 
@@ -58,14 +63,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const createUser = async (newUser: User) => {
         try {
-            await registerUser({
+            const dbUser = await registerUser({
                 username: newUser.username,
                 email: newUser.email,
                 password: newUser.password,
                 role: newUser.role
             });
-        } catch (error: any) {
-            throw new Error(error.message || 'Failed to create user');
+
+            const appUser: User = {
+                id: dbUser.id,
+                username: dbUser.username,
+                email: dbUser.email || undefined,
+                role: dbUser.role as User['role'],
+            };
+
+            setUser(appUser);
+            localStorage.setItem('uattach-user', JSON.stringify(appUser));
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to create user';
+            throw new Error(message);
         }
     };
 

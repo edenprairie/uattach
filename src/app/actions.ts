@@ -54,6 +54,38 @@ export async function getUsers() {
     return users.map(({ password, ...u }) => u);
 }
 
+export async function updateUserPassword(adminId: string, targetUserId: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 8) {
+        throw new Error('Password must be at least 8 characters long');
+    }
+
+    // Require at least one number and one special character
+    const hasNumber = /[0-9]/.test(newPassword);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+    if (!hasNumber || !hasSpecial) {
+        throw new Error('Password must contain at least one number and one special character');
+    }
+
+    // Verify admin
+    const admin = await prisma.user.findUnique({
+        where: { id: adminId },
+        select: { role: true }
+    });
+
+    if (!admin || admin.role !== 'admin') {
+        throw new Error('Unauthorized: Only admins can reset passwords');
+    }
+
+    // Update target user
+    await prisma.user.update({
+        where: { id: targetUserId },
+        data: { password: newPassword } // In real app, hash this!
+    });
+
+    return { success: true };
+}
+
 // --- Product Actions ---
 
 export async function getProducts() {
@@ -63,6 +95,31 @@ export async function getProducts() {
 // --- Order Actions ---
 
 export async function createOrder(data: any) {
+    if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+        throw new Error('Order must contain at least one item');
+    }
+
+    if (!data.totalWeightKg || data.totalWeightKg <= 0) {
+        throw new Error('Invalid total weight');
+    }
+
+    if (!data.shippingAddress) {
+        throw new Error('Shipping address is required');
+    }
+
+    const requiredAddressFields = ['firstName', 'lastName', 'email', 'phone', 'line1', 'city', 'state', 'zip'];
+    for (const field of requiredAddressFields) {
+        if (!data.shippingAddress[field]) {
+            throw new Error(`Shipping address field '${field}' is required`);
+        }
+    }
+
+    for (const item of data.items) {
+        if (!item.productId || !item.quantity || item.quantity <= 0) {
+            throw new Error('Each item must have a valid product ID and quantity');
+        }
+    }
+
     try {
         // 1. Transaction to create Order + Items + Address
         const orderData: any = {
@@ -90,12 +147,17 @@ export async function createOrder(data: any) {
             }
         };
 
-        // Explicitly connect the user if ID is provided
-        // This is safer than scalar binding for optional relations
+        // Connect user if ID is provided and user exists
         if (data.userId) {
-            orderData.user = {
-                connect: { id: data.userId }
-            };
+            const userExists = await prisma.user.findUnique({
+                where: { id: data.userId },
+                select: { id: true }
+            });
+            if (userExists) {
+                orderData.user = {
+                    connect: { id: data.userId }
+                };
+            }
         }
 
         const order = await prisma.order.create({

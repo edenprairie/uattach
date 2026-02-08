@@ -78,7 +78,7 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
 
                 <h3 className="font-bold text-slate-900 pt-2">Container Organization</h3>
 
-                {containers.map((container, idx) => (
+                {containers.map((container) => (
                     <div key={container.id} className="border border-slate-100 rounded-lg p-4 bg-slate-50">
                         <div className="flex justify-between items-center mb-2">
                             <h3 className="font-bold text-slate-700">Container #{container.number}</h3>
@@ -96,8 +96,8 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                         </div>
 
                         <ul className="text-sm text-slate-600 space-y-1">
-                            {container.items.map((item, i) => (
-                                <li key={i} className="flex justify-between">
+                            {container.items?.map((item, i) => (
+                                <li key={item.product.id} className="flex justify-between">
                                     <span>{item.quantity}x {item.product.name}</span>
                                     <span>{(item.quantity * item.product.weightKg).toLocaleString()} kg</span>
                                 </li>

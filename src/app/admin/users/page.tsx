@@ -36,7 +36,10 @@ export default function UserManagementPage() {
             try {
                 const { getUsers } = await import('@/app/actions');
                 const dbUsers = await getUsers();
-                setUsers(dbUsers as any);
+                setUsers(dbUsers.map(u => ({
+                    ...u,
+                    email: u.email ?? undefined
+                })) as User[]);
             } catch (err) {
                 console.error('Failed to load users', err);
             } finally {
@@ -47,7 +50,7 @@ export default function UserManagementPage() {
         loadUsers();
     }, [user, isAuthenticated, router]);
 
-    const handleCreateUser = (e: React.FormEvent) => {
+    const handleCreateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -65,15 +68,15 @@ export default function UserManagementPage() {
                 role: formData.role
             };
 
-            createUser(newUser);
-
-            // Refresh list
-            createUser(newUser);
+            await createUser(newUser);
 
             // Refresh list from DB
-            import('@/app/actions').then(({ getUsers }) => {
-                getUsers().then((dbUsers) => setUsers(dbUsers as any));
-            });
+            const { getUsers } = await import('@/app/actions');
+            const dbUsers = await getUsers();
+            setUsers(dbUsers.map(u => ({
+                ...u,
+                email: u.email ?? undefined
+            })) as User[]);
 
             // Reset form
             setIsCreating(false);
@@ -83,9 +86,69 @@ export default function UserManagementPage() {
                 password: '',
                 role: 'user'
             });
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+            setError(errorMessage);
         }
+    };
+
+    // Password Reset State
+    const [isResettingPassword, setIsResettingPassword] = useState(false);
+    const [passwordResetUser, setPasswordResetUser] = useState<User | null>(null);
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [resetMessage, setResetMessage] = useState({ type: '', text: '' });
+
+    const handlePasswordReset = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setResetMessage({ type: '', text: '' });
+
+        if (!user || user.role !== 'admin' || !passwordResetUser) return;
+
+        // Validation
+        if (newPassword !== confirmPassword) {
+            setResetMessage({ type: 'error', text: 'Passwords do not match' });
+            return;
+        }
+
+        if (newPassword.length < 8) {
+            setResetMessage({ type: 'error', text: 'Password must be at least 8 characters' });
+            return;
+        }
+
+        const hasNumber = /[0-9]/.test(newPassword);
+        const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+        if (!hasNumber || !hasSpecial) {
+            setResetMessage({ type: 'error', text: 'Password must contain at least one number and one special character' });
+            return;
+        }
+
+        try {
+            const { updateUserPassword } = await import('@/app/actions');
+            await updateUserPassword(user.id, passwordResetUser.id, newPassword);
+
+            setResetMessage({ type: 'success', text: 'Password updated successfully!' });
+            setNewPassword('');
+            setConfirmPassword('');
+
+            // Auto close after success
+            setTimeout(() => {
+                setIsResettingPassword(false);
+                setPasswordResetUser(null);
+                setResetMessage({ type: '', text: '' });
+            }, 1500);
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Failed to reset password';
+            setResetMessage({ type: 'error', text: msg });
+        }
+    };
+
+    const openPasswordReset = (targetUser: User) => {
+        setPasswordResetUser(targetUser);
+        setIsResettingPassword(true);
+        setNewPassword('');
+        setConfirmPassword('');
+        setResetMessage({ type: '', text: '' });
     };
 
     if (isLoading) return <div className="p-8 text-center">Loading...</div>;
@@ -106,6 +169,72 @@ export default function UserManagementPage() {
                         Add User
                     </button>
                 </div>
+
+                {/* Password Reset Modal */}
+                {isResettingPassword && passwordResetUser && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                                <h2 className="text-xl font-bold text-slate-900">Reset Password</h2>
+                                <button onClick={() => setIsResettingPassword(false)} className="text-slate-400 hover:text-slate-600">
+                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+
+                            <form onSubmit={handlePasswordReset} className="p-6 space-y-4">
+                                <div className="p-3 bg-slate-50 rounded-lg text-sm text-slate-600 mb-4">
+                                    <p>Resetting password for: <span className="font-bold text-slate-900">{passwordResetUser.username}</span></p>
+                                </div>
+
+                                {resetMessage.text && (
+                                    <div className={`p-3 rounded-lg text-sm ${resetMessage.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                                        {resetMessage.text}
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                        value={newPassword}
+                                        onChange={e => setNewPassword(e.target.value)}
+                                        placeholder="Min. 8 chars, number & special char"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1">Confirm Password</label>
+                                    <input
+                                        type="password"
+                                        required
+                                        className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        placeholder="Retype password"
+                                    />
+                                </div>
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsResettingPassword(false)}
+                                        className="flex-1 px-4 py-2 border border-slate-300 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 px-4 py-2 bg-yellow-500 text-white font-medium rounded-lg hover:bg-yellow-600 transition-colors"
+                                    >
+                                        Update Password
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
                 {/* Create User Modal */}
                 {isCreating && (
@@ -158,7 +287,7 @@ export default function UserManagementPage() {
                                     <select
                                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-slate-900"
                                         value={formData.role}
-                                        onChange={e => setFormData({ ...formData, role: e.target.value as any })}
+                                        onChange={e => setFormData({ ...formData, role: e.target.value as User['role'] })}
                                     >
                                         <option value="user">Regular User</option>
                                         <option value="buyer">Buyer</option>
@@ -195,6 +324,7 @@ export default function UserManagementPage() {
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
@@ -221,6 +351,14 @@ export default function UserManagementPage() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400 font-mono">
                                         {u.id}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        <button
+                                            onClick={() => openPasswordReset(u)}
+                                            className="text-blue-600 hover:text-blue-800 font-medium text-xs border border-blue-200 hover:bg-blue-50 px-3 py-1 rounded transition-colors"
+                                        >
+                                            Reset Password
+                                        </button>
                                     </td>
                                 </tr>
                             ))}

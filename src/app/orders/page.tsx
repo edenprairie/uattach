@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Order } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
@@ -17,31 +17,52 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
 
-    useEffect(() => {
-        const fetchOrders = async () => {
-            try {
-                const { getUserOrders } = await import('@/app/actions');
-                // If user is logged in, use their ID. If not (guest), maybe show empty?
-                // For this demo, let's only show if logged in to avoid complexity
-                if (user?.id) {
-                    const dbOrders = await getUserOrders(user.id);
-                    setOrders(dbOrders as any);
-                } else {
-                    setOrders([]);
-                }
-            } catch (e) {
-                console.error('Failed to fetch orders', e);
-            } finally {
-                setLoading(false);
+    const fetchOrders = useCallback(async () => {
+        try {
+            const { getUserOrders } = await import('@/app/actions');
+            if (user?.id) {
+                const dbOrders = await getUserOrders(user.id);
+                const mappedOrders = dbOrders.map((o: any) => ({
+                    id: o.id,
+                    userId: o.userId,
+                    date: o.createdAt?.toISOString() || new Date().toISOString(),
+                    items: o.items?.map((i: any) => ({
+                        product: {
+                            id: i.product.id,
+                            name: i.product.name,
+                            category: i.product.category,
+                            description: i.product.description,
+                            weightKg: i.product.weightKg,
+                            pdfUrl: i.product.pdfUrl,
+                            imageUrl: i.product.imageUrl
+                        },
+                        quantity: i.quantity
+                    })) || [],
+                    containers: o.containers || [],
+                    shippingAddress: o.shippingAddress,
+                    status: o.status || 'pending',
+                    totalWeightKg: o.totalWeightKg,
+                    splitStrategy: o.splitStrategy || 'weight_optimized'
+                }));
+                setOrders(mappedOrders);
+            } else {
+                setOrders([]);
             }
-        };
+        } catch (e) {
+            console.error('Failed to fetch orders', e);
+            setOrders([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.id]);
 
+    useEffect(() => {
         if (user) {
             fetchOrders();
         } else {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, fetchOrders]);
 
     if (loading) {
         return (
@@ -60,7 +81,7 @@ export default function OrdersPage() {
                     </svg>
                 </div>
                 <h1 className="text-2xl font-bold text-slate-900">No orders found</h1>
-                <p className="text-slate-600">You haven't placed any orders yet.</p>
+                <p className="text-slate-600">You haven&apos;t placed any orders yet.</p>
                 <Link
                     href="/"
                     className="mt-4 inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
@@ -103,15 +124,15 @@ export default function OrdersPage() {
                                 <div className="p-6">
                                     <div className="space-y-6">
                                         {/* Show only first 2 containers to keep list compact */}
-                                        {order.containers.slice(0, 2).map((container, idx) => (
-                                            <div key={idx} className="border border-slate-100 rounded-lg p-4">
+                                        {order.containers.slice(0, 2).map((container) => (
+                                            <div key={container.id} className="border border-slate-100 rounded-lg p-4">
                                                 <div className="flex justify-between items-center mb-3">
                                                     <h4 className="font-semibold text-slate-700">Container #{container.number}</h4>
                                                     <span className="text-xs text-slate-500">{container.totalWeightKg} kg</span>
                                                 </div>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    {container.items.map((item, i) => (
-                                                        <div key={i} className="flex items-center gap-3">
+                                                    {container.items?.map((item) => (
+                                                        <div key={item.product.id} className="flex items-center gap-3">
                                                             <div className="w-12 h-12 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0 relative border border-slate-200">
                                                                 {/* Simple fallback image if thumbnail fails or just to be lightweight */}
                                                                 <PDFThumbnailClient pdfUrl={item.product.pdfUrl} className="w-full h-full" />

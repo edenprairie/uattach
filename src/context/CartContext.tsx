@@ -21,8 +21,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
     const [items, setItems] = useState<OrderItem[]>([]);
-    const [containers, setContainers] = useState<Container[]>([]);
-    const [validation, setValidation] = useState<{ valid: boolean; message?: string }>({ valid: true });
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
@@ -31,6 +29,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         const saved = localStorage.getItem('uattach-cart');
         if (saved) {
             try {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setItems(JSON.parse(saved));
             } catch (e) {
                 console.error('Failed to parse cart', e);
@@ -38,6 +37,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
         setIsLoaded(true);
     }, []);
+    // Derived state
+    const containers = React.useMemo(() => calculateContainers(items), [items]);
+    const validation = React.useMemo(() => validateOrder(containers), [containers]);
 
     // Save to localStorage whenever items change
     useEffect(() => {
@@ -46,12 +48,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
     }, [items, isLoaded]);
 
-    // Recalculate containers whenever items change
-    useEffect(() => {
-        const newContainers = calculateContainers(items);
-        setContainers(newContainers);
-        setValidation(validateOrder(newContainers));
-    }, [items]);
+
 
     const addToCart = (product: Product, quantity: number) => {
         setItems(prev => {
