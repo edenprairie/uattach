@@ -72,7 +72,7 @@ model Container {
 
 model ShippingAddress {
   id        String  @id @default(cuid())
-  userId    String?
+  userId    String? @unique
   firstName String
   lastName  String
   company   String?
@@ -85,4 +85,5 @@ model ShippingAddress {
   zip       String
   order     Order?
   user      User?   @relation(fields: [userId], references: [id])
+
 }
