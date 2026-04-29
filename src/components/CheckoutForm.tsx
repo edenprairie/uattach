@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { US_STATES } from '@/lib/constants';
-import { Order, ShippingAddress } from '@/lib/types';
+import { ShippingAddress } from '@/lib/types';
 
 export function CheckoutForm() {
     const router = useRouter();
-    const { items, containers, clearCart } = useCart();
+    const { items, clearCart, validation } = useCart();
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
 
@@ -46,15 +46,14 @@ export function CheckoutForm() {
         setLoading(true);
 
         try {
+            if (!validation.valid) {
+                throw new Error(validation.message || 'Order is not ready for checkout');
+            }
+
             const { createOrder } = await import('@/app/actions');
 
-            const totalWeight = containers.reduce((sum, c) => sum + c.totalWeightKg, 0);
-
-            // Prepare Order Data for DB
-            // Note: In real app, we validate items against DB price/stock here
             const orderPayload = {
                 userId: user?.id,
-                totalWeightKg: totalWeight,
                 splitStrategy: 'weight_optimized',
                 shippingAddress: formData,
                 items: items.map(item => ({
@@ -65,26 +64,9 @@ export function CheckoutForm() {
 
             const newOrder = await createOrder(orderPayload);
 
-            // Also save to localStorage for fallback/history view compatibility 
-            // until we fully migrate OrderHistory page to DB
-            const existingOrders = JSON.parse(localStorage.getItem('uattach-orders') || '[]');
-            // Adapt DB order back to local type roughly for display if needed
-            const localOrderMock: Order = {
-                id: newOrder.id,
-                userId: user?.id,
-                date: newOrder.date.toISOString(),
-                status: 'pending',
-                items: items, // Keep full items for local display context
-                containers: containers, // DB doesn't verify containers yet, we trust logic
-                shippingAddress: formData,
-                totalWeightKg: totalWeight,
-                splitStrategy: 'weight_optimized'
-            };
-            localStorage.setItem('uattach-orders', JSON.stringify([localOrderMock, ...existingOrders]));
-
             clearCart();
             router.push(`/checkout/success?orderId=${newOrder.id}`);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Order creation failed:', error);
             const msg = error instanceof Error ? error.message : 'Failed to place order';
 

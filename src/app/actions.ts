@@ -1,8 +1,43 @@
 'use server';
 
 import { prisma } from '@/lib/prisma';
-import { User, Product } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { buildContainerPersistencePlan, SubmittedOrderItem } from '@/lib/orderPersistence';
+import type { Prisma } from '@prisma/client';
+
+type UserRole = 'admin' | 'user' | 'buyer';
+
+interface RegisterUserInput {
+    username: string;
+    email?: string;
+    password: string;
+    role?: UserRole;
+}
+
+interface OrderShippingAddressInput {
+    firstName: string;
+    lastName: string;
+    company?: string;
+    email: string;
+    phone: string;
+    line1: string;
+    line2?: string;
+    city: string;
+    state: string;
+    zip: string;
+}
+
+interface CreateOrderInput {
+    userId?: string;
+    splitStrategy?: string;
+    shippingAddress: OrderShippingAddressInput;
+    items: SubmittedOrderItem[];
+}
+
+function stripPassword<T extends { password: string }>(user: T): Omit<T, 'password'> {
+    const { password, ...safeUser } = user;
+    void password;
+    return safeUser;
+}
 
 // --- Auth Actions ---
 
@@ -19,14 +54,12 @@ export async function loginUser(username: string, password: string) {
     });
 
     if (user && user.password === password) {
-        // Remove password from returned object
-        const { password: _, ...safeUser } = user;
-        return safeUser;
+        return stripPassword(user);
     }
     return null;
 }
 
-export async function registerUser(data: any) {
+export async function registerUser(data: RegisterUserInput) {
     const exists = await prisma.user.findFirst({
         where: { username: { equals: data.username, mode: 'insensitive' } }
     });
@@ -42,16 +75,14 @@ export async function registerUser(data: any) {
         }
     });
 
-    const { password: _, ...safeUser } = user;
-    return safeUser;
+    return stripPassword(user);
 }
 
 export async function getUsers() {
     const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' }
     });
-    // Strip passwords
-    return users.map(({ password, ...u }) => u);
+    return users.map(stripPassword);
 }
 
 export async function updateUserPassword(adminId: string, targetUserId: string, newPassword: string) {
@@ -94,20 +125,25 @@ export async function getProducts() {
 
 // --- Order Actions ---
 
-export async function createOrder(data: any) {
+export async function createOrder(data: CreateOrderInput) {
     if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
         throw new Error('Order must contain at least one item');
-    }
-
-    if (!data.totalWeightKg || data.totalWeightKg <= 0) {
-        throw new Error('Invalid total weight');
     }
 
     if (!data.shippingAddress) {
         throw new Error('Shipping address is required');
     }
 
-    const requiredAddressFields = ['firstName', 'lastName', 'email', 'phone', 'line1', 'city', 'state', 'zip'];
+    const requiredAddressFields: Array<keyof OrderShippingAddressInput> = [
+        'firstName',
+        'lastName',
+        'email',
+        'phone',
+        'line1',
+        'city',
+        'state',
+        'zip'
+    ];
     for (const field of requiredAddressFields) {
         if (!data.shippingAddress[field]) {
             throw new Error(`Shipping address field '${field}' is required`);
@@ -121,10 +157,31 @@ export async function createOrder(data: any) {
     }
 
     try {
-        // 1. Transaction to create Order + Items + Address
-        const orderData: any = {
-            totalWeightKg: data.totalWeightKg,
-            splitStrategy: data.splitStrategy,
+        const submittedItems: SubmittedOrderItem[] = data.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+        }));
+
+        const products = await prisma.product.findMany({
+            where: {
+                id: { in: submittedItems.map((item) => item.productId) }
+            },
+            select: {
+                id: true,
+                weightKg: true,
+            }
+        });
+
+        const containerPlan = buildContainerPersistencePlan(submittedItems, products);
+        const totalWeightKg = containerPlan.reduce((sum, container) => sum + container.totalWeightKg, 0);
+
+        if (totalWeightKg <= 0) {
+            throw new Error('Invalid total weight');
+        }
+
+        const orderData: Prisma.OrderCreateInput = {
+            totalWeightKg,
+            splitStrategy: data.splitStrategy || 'weight_optimized',
             shippingAddress: {
                 create: {
                     firstName: data.shippingAddress.firstName,
@@ -138,12 +195,6 @@ export async function createOrder(data: any) {
                     state: data.shippingAddress.state,
                     zip: data.shippingAddress.zip,
                 }
-            },
-            items: {
-                create: data.items.map((item: any) => ({
-                    productId: item.productId,
-                    quantity: item.quantity
-                }))
             }
         };
 
@@ -160,19 +211,57 @@ export async function createOrder(data: any) {
             }
         }
 
-        const order = await prisma.order.create({
-            data: orderData,
-            include: { items: true, shippingAddress: true }
+        const order = await prisma.$transaction(async (tx) => {
+            const createdOrder = await tx.order.create({
+                data: orderData,
+                include: { shippingAddress: true }
+            });
+
+            for (const container of containerPlan) {
+                const createdContainer = await tx.container.create({
+                    data: {
+                        orderId: createdOrder.id,
+                        number: container.number,
+                        totalWeightKg: container.totalWeightKg,
+                        maxWeightKg: container.maxWeightKg,
+                    }
+                });
+
+                await tx.orderItem.createMany({
+                    data: container.items.map((item) => ({
+                        orderId: createdOrder.id,
+                        containerId: createdContainer.id,
+                        productId: item.productId,
+                        quantity: item.quantity,
+                    }))
+                });
+            }
+
+            return tx.order.findUniqueOrThrow({
+                where: { id: createdOrder.id },
+                include: {
+                    items: { include: { product: true } },
+                    containers: {
+                        include: {
+                            items: { include: { product: true } }
+                        },
+                        orderBy: { number: 'asc' }
+                    },
+                    shippingAddress: true,
+                    user: true,
+                }
+            });
         });
 
         return order;
-    } catch (e: any) {
-        console.error('SERVER ACTION ERROR: createOrder', e);
+    } catch (error: unknown) {
+        console.error('SERVER ACTION ERROR: createOrder', error);
+        const orderError = error as { code?: string; message?: string };
         // Check for specific Prisma errors
-        if (e.code === 'P2003') {
+        if (orderError.code === 'P2003') {
             throw new Error('Invalid User ID. Please log out and log in again.');
         }
-        throw new Error(`Order failed: ${e.message}`);
+        throw new Error(`Order failed: ${orderError.message || 'Unknown error'}`);
     }
 }
 
@@ -192,7 +281,12 @@ export async function getUserOrders(userId: string) {
         where: whereClause,
         include: {
             items: { include: { product: true } },
-            containers: true,
+            containers: {
+                include: {
+                    items: { include: { product: true } }
+                },
+                orderBy: { number: 'asc' }
+            },
             shippingAddress: true,
             user: true // Include user details so admin sees who placed the order
         },
@@ -205,10 +299,37 @@ export async function getOrder(orderId: string) {
         where: { id: orderId },
         include: {
             items: { include: { product: true } },
-            containers: true,
+            containers: {
+                include: {
+                    items: { include: { product: true } }
+                },
+                orderBy: { number: 'asc' }
+            },
             shippingAddress: true,
             user: true // Include user for admin checks if needed
         }
     });
     return order;
+}
+
+export async function updateOrderStatus(adminId: string, orderId: string, status: string) {
+    const allowedStatuses = ['pending', 'processing', 'shipped'];
+
+    if (!allowedStatuses.includes(status)) {
+        throw new Error('Invalid order status');
+    }
+
+    const admin = await prisma.user.findUnique({
+        where: { id: adminId },
+        select: { role: true }
+    });
+
+    if (!admin || admin.role !== 'admin') {
+        throw new Error('Unauthorized: Only admins can update order status');
+    }
+
+    return await prisma.order.update({
+        where: { id: orderId },
+        data: { status },
+    });
 }

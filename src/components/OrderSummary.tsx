@@ -96,7 +96,7 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                         </div>
 
                         <ul className="text-sm text-slate-600 space-y-1">
-                            {container.items?.map((item, i) => (
+                            {container.items?.map((item) => (
                                 <li key={item.product.id} className="flex justify-between">
                                     <span>{item.quantity}x {item.product.name}</span>
                                     <span>{(item.quantity * item.product.weightKg).toLocaleString()} kg</span>

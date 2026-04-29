@@ -12,8 +12,6 @@ interface PDFThumbnailProps {
 }
 
 export default function PDFThumbnail({ pdfUrl, className, onClick }: PDFThumbnailProps) {
-    const [numPages, setNumPages] = useState<number>(0);
-    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -21,15 +19,13 @@ export default function PDFThumbnail({ pdfUrl, className, onClick }: PDFThumbnai
     }, []);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
-        setNumPages(numPages);
-        setLoading(false);
+        void numPages;
         setError(null);
     }
 
     function onDocumentLoadError(err: Error) {
         console.error('PDF load error:', err);
         setError('Failed to load PDF');
-        setLoading(false);
     }
 
     if (error) {

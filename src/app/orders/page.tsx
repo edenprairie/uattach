@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Order } from '@/lib/types';
 import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
+import { DbOrder, mapDbOrderToOrder } from '@/lib/orderMapping';
 
 // Dynamic import for PDF thumbnail to avoid SSR issues
 const PDFThumbnailClient = dynamic(() => import('@/components/PDFThumbnail'), {
@@ -22,28 +23,7 @@ export default function OrdersPage() {
             const { getUserOrders } = await import('@/app/actions');
             if (user?.id) {
                 const dbOrders = await getUserOrders(user.id);
-                const mappedOrders = dbOrders.map((o: any) => ({
-                    id: o.id,
-                    userId: o.userId,
-                    date: o.createdAt?.toISOString() || new Date().toISOString(),
-                    items: o.items?.map((i: any) => ({
-                        product: {
-                            id: i.product.id,
-                            name: i.product.name,
-                            category: i.product.category,
-                            description: i.product.description,
-                            weightKg: i.product.weightKg,
-                            pdfUrl: i.product.pdfUrl,
-                            imageUrl: i.product.imageUrl
-                        },
-                        quantity: i.quantity
-                    })) || [],
-                    containers: o.containers || [],
-                    shippingAddress: o.shippingAddress,
-                    status: o.status || 'pending',
-                    totalWeightKg: o.totalWeightKg,
-                    splitStrategy: o.splitStrategy || 'weight_optimized'
-                }));
+                const mappedOrders = dbOrders.map((order) => mapDbOrderToOrder(order as DbOrder));
                 setOrders(mappedOrders);
             } else {
                 setOrders([]);

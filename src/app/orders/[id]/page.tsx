@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Order } from '@/lib/types';
+import { DbOrder, mapDbOrderToOrder } from '@/lib/orderMapping';
 
 import { useAuth } from '@/context/AuthContext'; // Import Auth
 import dynamic from 'next/dynamic';
@@ -20,40 +21,44 @@ export default function OrderDetailPage() {
     const [loading, setLoading] = useState(true);
     const { user } = useAuth(); // Get User
 
-    const handleStatusChange = (newStatus: Order['status']) => {
+    const handleStatusChange = async (newStatus: Order['status']) => {
         if (!order) return;
 
-        // Update local state
+        const previousOrder = order;
         const updatedOrder = { ...order, status: newStatus };
         setOrder(updatedOrder);
 
-        // Update localStorage
-        const saved = localStorage.getItem('uattach-orders');
-        if (saved) {
-            const orders = JSON.parse(saved) as Order[];
-            const updatedOrders = orders.map(o => o.id === order.id ? updatedOrder : o);
-            localStorage.setItem('uattach-orders', JSON.stringify(updatedOrders));
+        try {
+            const { updateOrderStatus } = await import('@/app/actions');
+
+            if (!user?.id) {
+                throw new Error('You must be signed in to update order status');
+            }
+
+            await updateOrderStatus(user.id, order.id, newStatus);
+        } catch (error) {
+            console.error('Failed to update order status', error);
+            setOrder(previousOrder);
+            alert(error instanceof Error ? error.message : 'Failed to update order status');
         }
     };
 
-    useEffect(() => {
-        const loadOrder = () => {
-            const saved = localStorage.getItem('uattach-orders');
-            if (saved) {
-                try {
-                    const orders = JSON.parse(saved) as Order[];
-                    const found = orders.find(o => o.id === orderId);
-                    setOrder(found || null);
-                } catch (e) {
-                    console.error('Failed to parse orders', e);
-                    setOrder(null);
-                }
-            }
+    const loadOrder = useCallback(async () => {
+        try {
+            const { getOrder } = await import('@/app/actions');
+            const dbOrder = await getOrder(orderId);
+            setOrder(dbOrder ? mapDbOrderToOrder(dbOrder as DbOrder) : null);
+        } catch (error) {
+            console.error('Failed to load order', error);
+            setOrder(null);
+        } finally {
             setLoading(false);
-        };
-
-        loadOrder();
+        }
     }, [orderId]);
+
+    useEffect(() => {
+        loadOrder();
+    }, [loadOrder]);
 
     if (loading) {
         return (

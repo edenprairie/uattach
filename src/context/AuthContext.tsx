@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const savedUser = localStorage.getItem('uattach-user');
         if (savedUser) {
             try {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setUser(JSON.parse(savedUser));
             } catch (e) {
                 console.error('Failed to parse user', e);
@@ -63,6 +62,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const createUser = async (newUser: User) => {
         try {
+            if (!newUser.password) {
+                throw new Error('Password is required');
+            }
+
             const dbUser = await registerUser({
                 username: newUser.username,
                 email: newUser.email,

@@ -8,6 +8,18 @@ import { Hero } from '@/components/Hero';
 import { PDFModal } from '@/components/PDFModal';
 
 import { SearchBar } from '@/components/SearchBar';
+import { Product } from '@/lib/types';
+
+interface DbProduct {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  weightKg: number;
+  pdfUrl: string;
+  imageUrl?: string | null;
+  features?: string[];
+}
 
 export default function Home() {
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
@@ -19,14 +31,14 @@ export default function Home() {
     import('@/app/actions').then(({ getProducts }) => {
       getProducts().then((dbProducts) => {
         if (dbProducts && dbProducts.length > 0) {
-          setProducts(dbProducts.map((p: any) => ({
+          setProducts(dbProducts.map((p: DbProduct): Product => ({
             id: p.id,
             name: p.name,
             category: p.category,
             description: p.description,
             weightKg: p.weightKg,
             pdfUrl: p.pdfUrl,
-            imageUrl: p.imageUrl,
+            imageUrl: p.imageUrl || undefined,
             features: p.features
           })));
         }
