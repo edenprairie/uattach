@@ -61,6 +61,10 @@ Passwords are currently stored as plain text for prototype use. Do not use this 
 ```bash
 npm run dev      # Start Next.js dev server with webpack
 npm run build    # Production build
+npm run preview  # OpenNext build + local Wrangler preview
+npm run deploy   # OpenNext build + Cloudflare deploy
+npm run upload   # OpenNext build + upload only
+npm run cf-typegen  # Generate Cloudflare env typings
 npm run start    # Start built app
 npm run lint     # ESLint
 ```
@@ -181,6 +185,46 @@ There are two product sources:
 
 When the database has products, the homepage displays seeded database products. When the database is unavailable or empty, the homepage falls back to mock products.
 
+## Cloudflare Migration
+
+This repository now includes an initial Cloudflare Workers migration path based on OpenNext:
+
+- `wrangler.jsonc`
+- `open-next.config.ts`
+- `public/_headers`
+- `.dev.vars.example`
+
+The migration also updates the runtime stack in a few important ways:
+
+- Next.js was bumped to `16.2.5` because the current OpenNext Cloudflare adapter does not support `16.1.6`.
+- Prisma is configured with `engineType = "client"` in [prisma/schema.prisma](prisma/schema.prisma).
+- [src/lib/prisma.ts](src/lib/prisma.ts) now uses `@prisma/adapter-pg` and `pg`, which is the compatible direction for Cloudflare Workers.
+- [next.config.ts](next.config.ts) now initializes OpenNext's Cloudflare dev context and externalizes Prisma/PG packages for the server bundle.
+
+### Local Cloudflare Setup
+
+1. Install dependencies.
+2. Copy `.dev.vars.example` to `.dev.vars`.
+3. Set `DATABASE_URL` in `.dev.vars` or in Cloudflare secrets.
+4. Run `npm run preview` to build for Cloudflare and start Wrangler locally.
+
+### Expected Cloudflare Secrets
+
+- `DATABASE_URL`
+
+If you deploy to Cloudflare, store secrets with Wrangler rather than committing them to `wrangler.jsonc`.
+
+### Current Migration Status
+
+The repo-side migration files are in place, but local verification on this machine is still partially blocked by native binary issues:
+
+- Next 16's local SWC package is failing code-sign validation in this macOS environment.
+- OpenNext's build path currently trips over `@ast-grep/napi` for the same reason.
+
+Those are local toolchain/runtime problems, not app-level TypeScript or routing errors. The Cloudflare migration should still be validated in Linux CI or a real Cloudflare build environment before treating it as production-ready.
+
+A Linux verification workflow is included at [.github/workflows/cloudflare-compat.yml](.github/workflows/cloudflare-compat.yml). It runs lint, the existing TypeScript test, the standard Next build, and the OpenNext Cloudflare build with a placeholder `DATABASE_URL`.
+
 ## Testing And Verification
 
 There is no full test runner configured yet. The current lightweight TypeScript test verifies server-side container persistence planning:
@@ -194,6 +238,7 @@ General checks:
 ```bash
 npm run lint
 npm run build
+npm run preview
 ```
 
 ## Known Limitations
@@ -206,6 +251,7 @@ npm run build
 - Server actions return user records in some order queries; avoid exposing password fields before production hardening.
 - PDF thumbnail workers load from `unpkg.com`, which requires network access in the browser.
 - The README setup assumes an external PostgreSQL database; no local Docker Compose file is included.
+- The Cloudflare migration has not yet been verified in a clean Linux/CI environment because local macOS native module loading is failing for SWC and `@ast-grep/napi`.
 
 ## Recommended Next Work
 
@@ -213,5 +259,6 @@ npm run build
 2. Persist profile shipping addresses through a server action.
 3. Add order authorization checks for non-admin detail access.
 4. Add product management for admins.
-5. Add a proper test runner and cover checkout/order persistence end to end.
-6. Align mock products and seeded products so local fallback and database catalog show the same business data.
+5. Validate the Cloudflare build in CI or a Cloudflare preview deployment and adjust any runtime-specific Prisma behavior that appears there.
+6. Add a proper test runner and cover checkout/order persistence end to end.
+7. Align mock products and seeded products so local fallback and database catalog show the same business data.

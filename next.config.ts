@@ -1,8 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  output: 'standalone',
+  serverExternalPackages: ["@prisma/client", ".prisma/client", "@prisma/adapter-pg", "pg"],
   webpack: (config) => {
     config.resolve.alias.canvas = false;
     return config;
@@ -10,3 +9,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+import("@opennextjs/cloudflare").then((m) => m.initOpenNextCloudflareForDev());

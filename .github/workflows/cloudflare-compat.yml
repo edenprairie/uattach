@@ -1,0 +1,41 @@
+name: Cloudflare Compatibility
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/**"
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/uattach
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run order persistence test
+        run: ./node_modules/.bin/ts-node --project tsconfig.json --compiler-options '{"module":"commonjs"}' tests/orderPersistence.test.ts
+
+      - name: Verify Next.js production build
+        run: npm run build
+
+      - name: Verify OpenNext Cloudflare build
+        run: ./node_modules/.bin/opennextjs-cloudflare build
