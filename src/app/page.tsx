@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { ProductCard } from '@/components/ProductCard';
 import { OrderSummary } from '@/components/OrderSummary';
-import { PRODUCTS } from '@/lib/mockData';
 import { Hero } from '@/components/Hero';
 import { PDFModal } from '@/components/PDFModal';
 
 import { SearchBar } from '@/components/SearchBar';
 import { Product } from '@/lib/types';
+import { useCart } from '@/context/CartContext';
 
 interface DbProduct {
   id: string;
@@ -22,16 +22,18 @@ interface DbProduct {
 }
 
 export default function Home() {
+  const { syncCartWithProducts } = useCart();
   const [pdfModalOpen, setPdfModalOpen] = useState(false);
   const [currentPdf, setCurrentPdf] = useState<{ url: string, title: string } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState(PRODUCTS); // Default to mock, replace on load
+  const [products, setProducts] = useState<Product[]>([]);
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
 
   useEffect(() => {
     import('@/app/actions').then(({ getProducts }) => {
       getProducts().then((dbProducts) => {
         if (dbProducts && dbProducts.length > 0) {
-          setProducts(dbProducts.map((p: DbProduct): Product => ({
+          const mappedProducts = dbProducts.map((p: DbProduct): Product => ({
             id: p.id,
             name: p.name,
             category: p.category,
@@ -40,11 +42,19 @@ export default function Home() {
             pdfUrl: p.pdfUrl,
             imageUrl: p.imageUrl || undefined,
             features: p.features
-          })));
+          }));
+
+          setProducts(mappedProducts);
+          syncCartWithProducts(mappedProducts);
         }
+
+        setCatalogLoaded(true);
+      }).catch((error) => {
+        console.error('Failed to load products', error);
+        setCatalogLoaded(true);
       });
     });
-  }, []);
+  }, [syncCartWithProducts]);
 
   const handleOpenPdf = (url: string, title: string) => {
     setCurrentPdf({ url, title });
@@ -81,7 +91,12 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredProducts.length > 0 ? (
+              {!catalogLoaded ? (
+                <div className="col-span-full text-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">Loading products...</h3>
+                  <p className="text-slate-500">Fetching the latest catalog.</p>
+                </div>
+              ) : filteredProducts.length > 0 ? (
                 filteredProducts.map(product => (
                   <ProductCard
                     key={product.id}
@@ -96,14 +111,22 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">No products found</h3>
-                  <p className="text-slate-500">We couldn&apos;t find matches for &quot;{searchQuery}&quot;</p>
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="mt-4 text-blue-600 font-medium hover:underline"
-                  >
-                    Clear Search
-                  </button>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">
+                    {searchQuery ? 'No products found' : 'No products available'}
+                  </h3>
+                  <p className="text-slate-500">
+                    {searchQuery
+                      ? `We couldn't find matches for "${searchQuery}"`
+                      : 'The live catalog is currently empty.'}
+                  </p>
+                  {searchQuery ? (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="mt-4 text-blue-600 font-medium hover:underline"
+                    >
+                      Clear Search
+                    </button>
+                  ) : null}
                 </div>
               )}
             </div>

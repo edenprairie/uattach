@@ -69,11 +69,21 @@ export function CheckoutForm() {
         } catch (error: unknown) {
             console.error('Order creation failed:', error);
             const msg = error instanceof Error ? error.message : 'Failed to place order';
+            const hasStaleProduct = msg.includes('Unknown product ID');
 
             // Only Auto-logout for Foreign Key constraints (Invalid User/Product)
             // P2003 is Foreign Key Constraint Violation in Prisma
             // We also check for 'Invalid User ID' which we manually throw in actions.ts
             const isFKError = msg.includes('Invalid User ID') || msg.includes('Constraint violation');
+
+            if (hasStaleProduct) {
+                alert('Your saved cart is out of date with the live catalog. We cleared it so you can add the current products again.');
+
+                clearCart();
+                localStorage.removeItem('uattach-cart');
+                router.push('/');
+                return;
+            }
 
             if (isFKError) {
                 alert('Your cart contains items from an old session. We need to clear your cart and log you out to refresh the data.');

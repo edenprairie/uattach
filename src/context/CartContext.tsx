@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Product, OrderItem, Container } from '@/lib/types';
 import { calculateContainers, validateOrder } from '@/lib/containerLogic';
+import { reconcileCartItems } from '@/lib/cartCatalog';
 
 interface CartContextType {
     items: OrderItem[];
@@ -11,6 +12,7 @@ interface CartContextType {
     removeFromCart: (productId: string) => void;
     updateQuantity: (productId: string, quantity: number) => void;
     clearCart: () => void;
+    syncCartWithProducts: (products: Product[]) => void;
     validation: { valid: boolean; message?: string };
     isCartOpen: boolean;
     openCart: () => void;
@@ -50,7 +52,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 
 
-    const addToCart = (product: Product, quantity: number) => {
+    const addToCart = useCallback((product: Product, quantity: number) => {
         setItems(prev => {
             const existing = prev.find(i => i.product.id === product.id);
             if (existing) {
@@ -63,13 +65,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             return [...prev, { product, quantity }];
         });
         setIsCartOpen(true); // Open cart when adding item
-    };
+    }, []);
 
-    const removeFromCart = (productId: string) => {
+    const removeFromCart = useCallback((productId: string) => {
         setItems(prev => prev.filter(i => i.product.id !== productId));
-    };
+    }, []);
 
-    const updateQuantity = (productId: string, quantity: number) => {
+    const updateQuantity = useCallback((productId: string, quantity: number) => {
         if (quantity <= 0) {
             removeFromCart(productId);
             return;
@@ -77,11 +79,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setItems(prev => prev.map(i =>
             i.product.id === productId ? { ...i, quantity } : i
         ));
-    };
+    }, [removeFromCart]);
 
-    const clearCart = () => setItems([]);
-    const openCart = () => setIsCartOpen(true);
-    const closeCart = () => setIsCartOpen(false);
+    const clearCart = useCallback(() => setItems([]), []);
+    const syncCartWithProducts = useCallback((products: Product[]) => {
+        setItems((prev) => reconcileCartItems(prev, products));
+    }, []);
+    const openCart = useCallback(() => setIsCartOpen(true), []);
+    const closeCart = useCallback(() => setIsCartOpen(false), []);
 
     return (
         <CartContext.Provider value={{
@@ -91,6 +96,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             removeFromCart,
             updateQuantity,
             clearCart,
+            syncCartWithProducts,
             validation,
             isCartOpen,
             openCart,
