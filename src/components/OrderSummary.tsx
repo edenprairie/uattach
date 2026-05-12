@@ -1,6 +1,7 @@
-import { useCart } from "@/context/CartContext";
+"use client";
 
-import { useRouter } from 'next/navigation';
+import { useCart } from "@/context/CartContext";
+import Link from "next/link";
 
 interface OrderSummaryProps {
     showCheckoutButton?: boolean;
@@ -8,7 +9,6 @@ interface OrderSummaryProps {
 
 export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
     const { containers, validation, items, closeCart, updateQuantity } = useCart();
-    const router = useRouter();
 
     if (items.length === 0) {
         return (
@@ -43,6 +43,7 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center border border-slate-200 rounded-lg">
                                         <button
+                                            type="button"
                                             onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                                             className="px-3 py-1 hover:bg-slate-50 text-slate-600 border-r border-slate-200 transition-colors"
                                         >−</button>
@@ -60,11 +61,13 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                                             className="w-14 text-center text-sm font-semibold text-slate-900 border-none focus:ring-0 p-1 appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         />
                                         <button
+                                            type="button"
                                             onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                                             className="px-3 py-1 hover:bg-slate-50 text-slate-600 border-l border-slate-200 transition-colors"
                                         >+</button>
                                     </div>
                                     <button
+                                        type="button"
                                         onClick={() => updateQuantity(item.product.id, 0)}
                                         className="text-xs text-red-500 hover:text-red-700 hover:underline"
                                     >
@@ -120,16 +123,23 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                         <span>Total Containers</span>
                         <span>{containers.length}</span>
                     </div>
-                    <button
-                        disabled={!validation.valid}
+                    <Link
+                        aria-disabled={!validation.valid}
                         onClick={() => {
+                            if (!validation.valid) {
+                                return;
+                            }
                             closeCart();
-                            router.push('/checkout');
                         }}
-                        className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-200"
+                        href={validation.valid ? "/checkout" : "#"}
+                        className={`block w-full text-center font-bold py-3 rounded-xl transition-colors shadow-lg shadow-blue-200 ${
+                            validation.valid
+                                ? "bg-blue-600 text-white hover:bg-blue-700"
+                                : "bg-blue-600 text-white opacity-50 cursor-not-allowed pointer-events-none"
+                        }`}
                     >
                         Proceed to Checkout
-                    </button>
+                    </Link>
                 </div>
             )}
         </div>
