@@ -1,4 +1,4 @@
-const ITERATIONS = 210_000;
+const ITERATIONS = 100_000;
 const encoder = new TextEncoder();
 
 function toHex(value: Uint8Array): string {
@@ -27,7 +27,7 @@ export async function verifyPassword(password: string, encoded: string): Promise
     const [algorithm, rawIterations, rawSalt, rawHash] = encoded.split('$');
     if (algorithm !== 'pbkdf2-sha256') return false;
     const iterations = Number(rawIterations);
-    if (!Number.isInteger(iterations) || iterations < 100_000 || iterations > 1_000_000) return false;
+    if (!Number.isInteger(iterations) || iterations !== ITERATIONS) return false;
 
     try {
         const expected = fromHex(rawHash);
