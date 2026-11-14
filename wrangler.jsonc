@@ -7,8 +7,8 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "routes": [
     {
-      "pattern": "www.uattach.com/*",
-      "zone_name": "uattach.com"
+      "pattern": "www.uattach.com",
+      "custom_domain": true
     }
   ],
   "assets": {
