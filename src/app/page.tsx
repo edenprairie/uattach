@@ -32,6 +32,7 @@ export default function Home() {
                                     priority
                                     sizes="(max-width: 800px) 85vw, 44vw"
                                     className="hero-art-image"
+                                    unoptimized
                                 />
                             </div>
                             <div className="hero-art-label"><span>PRODUCT FILE 001</span><span>SKID STEER / BUCKETS</span></div>
@@ -55,27 +56,27 @@ export default function Home() {
             <section className="catalog-feature" id="equipment">
                 <div className="section-heading">
                     <div>
-                        <p className="eyebrow"><span /> CURRENT SAMPLE</p>
-                        <h2>Start with the<br /><em>product in view.</em></h2>
+                        <p className="eyebrow"><span /> THE SAMPLE CATALOG</p>
+                        <h2>Product details,<br /><em>in full view.</em></h2>
                     </div>
-                    <p className="section-side-note">The member catalog opens as a page-by-page product book. Tap a product, choose a size and quantity, then review its weight in your order.</p>
+                    <p className="section-side-note">Preview the product sheet, then sign in to browse the catalog page by page, choose quantities, and plan your load.</p>
                 </div>
                 <div className="sample-product-card">
                     <div className="sample-cover">
-                        <Image src={SAMPLE_CATALOG_PREVIEW_URL} alt="Sample specification sheet for a Standard Low Pro Bucket" fill sizes="(max-width: 800px) 90vw, 50vw" />
-                        <span className="cover-tag">SAMPLE CATALOG / PAGE 01</span>
+                        <div className="sample-cover-heading"><span>PRODUCT SHEET / 01</span><span>SKID STEER ATTACHMENTS</span></div>
+                        <Image src={SAMPLE_CATALOG_PREVIEW_URL} alt="Sample specification sheet for a Standard Low Pro Bucket" fill sizes="(max-width: 800px) 90vw, 50vw" unoptimized />
+                        <span className="cover-tag">SAMPLE CATALOG <i /> PAGE 01</span>
                     </div>
                     <div className="sample-details">
                         <div className="sample-title-row"><span className="product-number">01</span><div><p className="eyebrow">SKID STEER ATTACHMENT</p><h3>Standard Low Pro Bucket</h3></div></div>
-                        <p className="sample-description">A single-page catalog sample with five width options, construction notes, capacity details, and cutting-edge choices.</p>
+                        <p className="sample-description">The sample sheet brings the key specifications and available widths together, so your team can review the product before building a quantity request.</p>
                         <div className="sample-specs">
                             <div><span>Bucket depth</span><strong>30.7 in</strong></div>
                             <div><span>Bucket height</span><strong>21.5 in</strong></div>
                             <div><span>Capacity</span><strong>15.5–21.7 cu ft</strong></div>
                         </div>
                         <div className="size-row"><span>AVAILABLE WIDTHS</span><div>{SAMPLE_PRODUCTS.map((product) => <b key={product.id}>{product.name.split(' - ')[1]?.replace(' STD', '')}</b>)}</div></div>
-                        <Link href="/login" className="text-link">Open member catalog <span>→</span></Link>
-                        <p className="catalog-disclaimer">The current PDF is one page. Page controls are ready for the full catalog when it is available.</p>
+                        <div className="sample-card-actions"><Link href="/login" className="button button-red">Browse the member catalog <span>↗</span></Link><p className="catalog-disclaimer">Sample catalog · 1 page</p></div>
                     </div>
                 </div>
             </section>
