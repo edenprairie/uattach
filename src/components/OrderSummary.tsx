@@ -138,7 +138,7 @@ export function OrderSummary({ showCheckoutButton = true }: OrderSummaryProps) {
                                 : "bg-blue-600 text-white opacity-50 cursor-not-allowed pointer-events-none"
                         }`}
                     >
-                        Proceed to Checkout
+                        Review Order
                     </Link>
                 </div>
             )}

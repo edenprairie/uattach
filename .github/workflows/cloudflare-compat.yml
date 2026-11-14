@@ -13,7 +13,6 @@ jobs:
     env:
       CI: true
       NEXT_TELEMETRY_DISABLED: "1"
-      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/uattach
 
     steps:
       - name: Check out repository

@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "postinstall": "prisma generate",
     "build": "next build --webpack",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
@@ -16,18 +15,15 @@
   "dependencies": {
     "@next/swc-wasm-nodejs": "^16.2.5",
     "@opennextjs/cloudflare": "^1.19.8",
-    "@prisma/adapter-pg": "^7.8.0",
     "canvas-confetti": "^1.9.4",
     "next": "^16.2.5",
     "pdfjs-dist": "^4.4.168",
-    "pg": "^8.20.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-pdf": "^9.1.1",
     "wrangler": "^4.90.0"
   },
   "devDependencies": {
-    "@prisma/client": "^6.19.2",
     "@tailwindcss/postcss": "^4",
     "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^20",
@@ -35,12 +31,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.2.5",
-    "prisma": "^6.19.2",
-    "tailwindcss": "^4",
     "ts-node": "^10.9.2",
+    "tailwindcss": "^4",
     "typescript": "^5"
-  },
-  "prisma": {
-    "seed": "ts-node --project tsconfig.seed.json prisma/seed.ts"
   }
 }

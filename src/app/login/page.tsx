@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
@@ -13,83 +13,50 @@ export default function LoginPage() {
     const { login } = useAuth();
     const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
         setError('');
         setLoading(true);
-
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        const success = await login(username, password);
-        if (success) {
-            router.push('/');
-        } else {
-            setError('Invalid credentials. Try "demo" / "Demo#123"');
-        }
+        const signedInUser = await login(username, password);
         setLoading(false);
+
+        if (signedInUser) {
+            if (signedInUser.role === 'buyer') {
+                router.push('/customer');
+                return;
+            }
+            const next = new URLSearchParams(window.location.search).get('next');
+            router.push(next?.startsWith('/') ? next : '/catalog');
+        } else {
+            setError('We could not verify those sign-in details. Please try again or check with your Uattach contact.');
+        }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
-            <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold text-slate-900 mb-2">Welcome Back</h1>
-                    <p className="text-slate-600">Sign in to access your orders</p>
+        <main className="auth-page">
+            <section className="auth-story">
+                <div>
+                    <p className="eyebrow"><span /> UATTACH PARTNER ROOM</p>
+                    <h1>Product know-how.<br /><em>Freight, figured.</em></h1>
+                    <p>Sign in to browse the working catalog, build a quantity list, and review an estimated container plan.</p>
                 </div>
-
-                {error && (
-                    <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-6 border border-red-100 flex items-center gap-2">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Username</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 placeholder:text-slate-400"
-                            placeholder="username"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white text-slate-900 placeholder:text-slate-400"
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-slate-900 text-white font-bold py-3.5 rounded-xl hover:bg-slate-800 transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-slate-200"
-                    >
-                        {loading ? 'Signing In...' : 'Sign In'}
-                    </button>
-                </form>
-
-                <div className="mt-8 text-center bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-blue-800 font-medium">Demo Credentials:</p>
-                    <p className="text-sm text-blue-600 mt-1 font-mono">User: demo</p>
-                    <p className="text-sm text-blue-600 font-mono">Pass: Demo#123</p>
+                <div className="auth-proof"><i /> Private access for approved Uattach business partners</div>
+            </section>
+            <section className="auth-panel">
+                <div className="auth-card">
+                    <p className="eyebrow"><span /> MEMBER ACCESS</p>
+                    <h2>Welcome back.</h2>
+                    <p>Use your partner account to continue to the product catalog.</p>
+                    {error ? <div className="auth-error" role="alert">{error}</div> : null}
+                    <form onSubmit={handleSubmit}>
+                        <label className="form-field"><span>Email or username</span><input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required /></label>
+                        <label className="form-field"><span>Password</span><input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+                        <button className="auth-submit" type="submit" disabled={loading}>{loading ? 'Checking access…' : 'Sign in to member catalog'}</button>
+                    </form>
+                    <div className="auth-footnote">Need an account? Ask your Uattach business contact for an invitation. Member access is intended for approved wholesale partners.</div>
+                    <Link href="/" className="auth-back">← Back to Uattach</Link>
                 </div>
-
-                <div className="mt-6 text-center">
-                    <Link href="/" className="text-sm text-slate-500 hover:text-slate-900">
-                        Back to Home
-                    </Link>
-                </div>
-            </div>
-        </div>
+            </section>
+        </main>
     );
 }

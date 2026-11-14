@@ -15,7 +15,7 @@ export default function PDFThumbnail({ pdfUrl, className, onClick }: PDFThumbnai
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
     }, []);
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {

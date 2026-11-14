@@ -1,2 +1,2 @@
 NEXTJS_ENV=development
-DATABASE_URL=postgresql://user:password@host:5432/database
+ADMIN_SETUP_TOKEN=replace-with-a-long-random-one-time-token

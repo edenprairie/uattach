@@ -1,151 +1,101 @@
-"use client";
-
-import { useState, useEffect } from 'react';
-import { ProductCard } from '@/components/ProductCard';
-import { OrderSummary } from '@/components/OrderSummary';
-import { Hero } from '@/components/Hero';
-import { PDFModal } from '@/components/PDFModal';
-
-import { SearchBar } from '@/components/SearchBar';
-import { Product } from '@/lib/types';
-import { useCart } from '@/context/CartContext';
-
-interface DbProduct {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  weightKg: number;
-  pdfUrl: string;
-  imageUrl?: string | null;
-  features?: string[];
-}
+import Image from 'next/image';
+import Link from 'next/link';
+import { SAMPLE_CATALOG_PREVIEW_URL, SAMPLE_PRODUCTS } from '@/lib/catalog';
 
 export default function Home() {
-  const { syncCartWithProducts } = useCart();
-  const [pdfModalOpen, setPdfModalOpen] = useState(false);
-  const [currentPdf, setCurrentPdf] = useState<{ url: string, title: string } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [products, setProducts] = useState<Product[]>([]);
-  const [catalogLoaded, setCatalogLoaded] = useState(false);
-
-  useEffect(() => {
-    import('@/app/actions').then(({ getProducts }) => {
-      getProducts().then((dbProducts) => {
-        if (dbProducts && dbProducts.length > 0) {
-          const mappedProducts = dbProducts.map((p: DbProduct): Product => ({
-            id: p.id,
-            name: p.name,
-            category: p.category,
-            description: p.description,
-            weightKg: p.weightKg,
-            pdfUrl: p.pdfUrl,
-            imageUrl: p.imageUrl || undefined,
-            features: p.features
-          }));
-
-          setProducts(mappedProducts);
-          syncCartWithProducts(mappedProducts);
-        }
-
-        setCatalogLoaded(true);
-      }).catch((error) => {
-        console.error('Failed to load products', error);
-        setCatalogLoaded(true);
-      });
-    });
-  }, [syncCartWithProducts]);
-
-  const handleOpenPdf = (url: string, title: string) => {
-    setCurrentPdf({ url, title });
-    setPdfModalOpen(true);
-  };
-
-  const handleClosePdf = () => {
-    setPdfModalOpen(false);
-    setCurrentPdf(null);
-  };
-
-  const filteredProducts = products.filter(product => {
-    const query = searchQuery.toLowerCase();
     return (
-      product.name.toLowerCase().includes(query) ||
-      product.category.toLowerCase().includes(query) ||
-      product.description.toLowerCase().includes(query)
-    );
-  });
-
-  return (
-    <main className="min-h-screen bg-slate-50 pb-20">
-      <Hero />
-
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* Left Column: Catalog */}
-          <div className="lg:col-span-8">
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold text-slate-900 mb-2">Our Products</h2>
-              <div className="h-1 w-20 bg-blue-600 rounded-full mb-6"></div>
-              <SearchBar onSearch={setSearchQuery} />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {!catalogLoaded ? (
-                <div className="col-span-full text-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">Loading products...</h3>
-                  <p className="text-slate-500">Fetching the latest catalog.</p>
+        <div className="home-page">
+            <section className="home-hero">
+                <div className="hero-grid" aria-hidden="true" />
+                <div className="home-hero-inner">
+                    <div className="hero-copy">
+                        <p className="eyebrow hero-eyebrow"><span /> Wholesale equipment partner</p>
+                        <h1>Work-ready attachments.<br /><em>Built for the long haul.</em></h1>
+                        <p className="hero-intro">
+                            Uattach connects American equipment dealers with dependable attachments sourced from China.
+                            Browse the sample catalog, build a quantity request, and let us plan the load with you.
+                        </p>
+                        <div className="hero-actions">
+                            <Link href="/login" className="button button-red">Member sign in <span>↗</span></Link>
+                            <a href="#equipment" className="button button-outline">View sample product <span>↓</span></a>
+                        </div>
+                        <div className="hero-note"><span className="note-rule" />Trade access for approved partners</div>
+                    </div>
+                    <div className="hero-art-wrap">
+                        <div className="hero-art-shadow" />
+                        <div className="hero-art-frame">
+                            <div className="hero-art-media">
+                                <Image
+                                    src={SAMPLE_CATALOG_PREVIEW_URL}
+                                    alt="Standard Low Pro Bucket sample product catalog page"
+                                    fill
+                                    priority
+                                    sizes="(max-width: 800px) 85vw, 44vw"
+                                    className="hero-art-image"
+                                />
+                            </div>
+                            <div className="hero-art-label"><span>PRODUCT FILE 001</span><span>SKID STEER / BUCKETS</span></div>
+                        </div>
+                        <div className="hero-sticker"><span>U</span><small>UATTACH<br />WHOLESALE</small></div>
+                        <div className="hero-art-index">01 <i /> 05</div>
+                    </div>
                 </div>
-              ) : filteredProducts.length > 0 ? (
-                filteredProducts.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onOpenPdf={handleOpenPdf}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-20 bg-white rounded-xl border border-slate-100 shadow-sm">
-                  <div className="text-gray-300 mb-4">
-                    <svg className="w-16 h-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">
-                    {searchQuery ? 'No products found' : 'No products available'}
-                  </h3>
-                  <p className="text-slate-500">
-                    {searchQuery
-                      ? `We couldn't find matches for "${searchQuery}"`
-                      : 'The live catalog is currently empty.'}
-                  </p>
-                  {searchQuery ? (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="mt-4 text-blue-600 font-medium hover:underline"
-                    >
-                      Clear Search
-                    </button>
-                  ) : null}
+                <div className="hero-bottomline"><span>Attachments for the people who put them to work</span><span>United States · Direct supply</span></div>
+            </section>
+
+            <section className="intro-strip" id="about">
+                <div className="intro-label"><span>01 / WHO WE ARE</span><i /></div>
+                <div className="intro-copy">
+                    <h2>A clearer path from factory floor to jobsite.</h2>
+                    <p>We support equipment businesses with practical product information, consolidated ordering, and freight planning from the first quantity list through shipment coordination.</p>
                 </div>
-              )}
-            </div>
-          </div>
+                <div className="intro-stat"><strong>One</strong><span>partner portal<br />for catalog + orders</span></div>
+            </section>
 
-          {/* Right Column: Order Logic / Summary */}
-          <div className="lg:col-span-4 sticky top-24">
-            <OrderSummary />
-          </div>
+            <section className="catalog-feature" id="equipment">
+                <div className="section-heading">
+                    <div>
+                        <p className="eyebrow"><span /> CURRENT SAMPLE</p>
+                        <h2>Start with the<br /><em>product in view.</em></h2>
+                    </div>
+                    <p className="section-side-note">The member catalog opens as a page-by-page product book. Tap a product, choose a size and quantity, then review its weight in your order.</p>
+                </div>
+                <div className="sample-product-card">
+                    <div className="sample-cover">
+                        <Image src={SAMPLE_CATALOG_PREVIEW_URL} alt="Sample specification sheet for a Standard Low Pro Bucket" fill sizes="(max-width: 800px) 90vw, 50vw" />
+                        <span className="cover-tag">SAMPLE CATALOG / PAGE 01</span>
+                    </div>
+                    <div className="sample-details">
+                        <div className="sample-title-row"><span className="product-number">01</span><div><p className="eyebrow">SKID STEER ATTACHMENT</p><h3>Standard Low Pro Bucket</h3></div></div>
+                        <p className="sample-description">A single-page catalog sample with five width options, construction notes, capacity details, and cutting-edge choices.</p>
+                        <div className="sample-specs">
+                            <div><span>Bucket depth</span><strong>30.7 in</strong></div>
+                            <div><span>Bucket height</span><strong>21.5 in</strong></div>
+                            <div><span>Capacity</span><strong>15.5–21.7 cu ft</strong></div>
+                        </div>
+                        <div className="size-row"><span>AVAILABLE WIDTHS</span><div>{SAMPLE_PRODUCTS.map((product) => <b key={product.id}>{product.name.split(' - ')[1]?.replace(' STD', '')}</b>)}</div></div>
+                        <Link href="/login" className="text-link">Open member catalog <span>→</span></Link>
+                        <p className="catalog-disclaimer">The current PDF is one page. Page controls are ready for the full catalog when it is available.</p>
+                    </div>
+                </div>
+            </section>
 
+            <section className="workflow-section">
+                <div className="workflow-heading"><p className="eyebrow"><span /> SIMPLE ORDERING</p><h2>From catalog page<br /><em>to load plan.</em></h2></div>
+                <div className="workflow-steps">
+                    <article><span>01</span><h3>Browse</h3><p>Turn through product pages and check the details that matter to your business.</p></article>
+                    <article><span>02</span><h3>Build your list</h3><p>Select the size and quantity you need. Your order stays price-free.</p></article>
+                    <article><span>03</span><h3>Review the load</h3><p>See estimated product weight and the suggested container split before sending your request.</p></article>
+                </div>
+            </section>
+
+            <section className="portal-banner">
+                <div><p className="eyebrow"><span /> PARTNER ACCESS</p><h2>Your catalog,<br /><em>one sign-in away.</em></h2></div>
+                <p>Member accounts are for Uattach’s business partners. A separate customer area is reserved for partner businesses and will be shaped around their workflow.</p>
+                <Link href="/login" className="button button-light">Enter the member portal <span>↗</span></Link>
+            </section>
+
+            <section className="contact-row" id="contact"><span>QUESTIONS ABOUT WHOLESALE ACCESS?</span><p>Talk with your Uattach business contact about an account.</p><Link href="/login">Member sign in <span>→</span></Link></section>
         </div>
-      </div>
-
-      <PDFModal
-        isOpen={pdfModalOpen}
-        onClose={handleClosePdf}
-        pdfUrl={currentPdf?.url || ''}
-        title={currentPdf?.title || 'Product Specification'}
-      />
-    </main>
-  );
+    );
 }

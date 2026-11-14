@@ -3,11 +3,11 @@
   "main": ".open-next/worker.js",
   "name": "uattach-web",
   "workers_dev": false,
-  "compatibility_date": "2026-05-10",
+  "compatibility_date": "2026-11-14",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "routes": [
     {
-      "pattern": "order.uattach.com",
+      "pattern": "www.uattach.com",
       "custom_domain": true
     }
   ],
@@ -15,6 +15,20 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "r2_buckets": [
+    {
+      "binding": "CATALOG",
+      "bucket_name": "uattach-private-catalog"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "APP_DB",
+      "database_name": "uattach-app",
+      "database_id": "6d589091-e34b-42ea-97c5-9bc535000a8c",
+      "migrations_dir": "migrations"
+    }
+  ],
   "observability": {
     "enabled": true
   }

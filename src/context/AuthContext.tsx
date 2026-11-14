@@ -1,16 +1,17 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@/lib/types';
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import type { User } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { loginUser, registerUser } from '@/app/actions';
+import { getCurrentUser, loginUser, logoutUser, registerUser } from '@/app/actions';
 
 interface AuthContextType {
     user: User | null;
-    login: (username: string, password: string) => Promise<boolean>;
+    isLoading: boolean;
+    login: (username: string, password: string) => Promise<User | null>;
     logout: () => void;
     setUser: (user: User | null) => void;
-    createUser: (user: User) => void;
+    createUser: (user: User) => Promise<void>;
     isAuthenticated: boolean;
 }
 
@@ -18,84 +19,66 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
-    // Check localStorage on mount for PERSISTED SESSION only
     useEffect(() => {
-        const savedUser = localStorage.getItem('uattach-user');
-        if (savedUser) {
-            try {
-                setUser(JSON.parse(savedUser));
-            } catch (e) {
-                console.error('Failed to parse user', e);
-            }
-        }
+        let active = true;
+        getCurrentUser()
+            .then((currentUser) => { if (active) setUser(currentUser as User | null); })
+            .catch((error) => { console.error('Failed to restore session', error); })
+            .finally(() => { if (active) setIsLoading(false); });
+        return () => { active = false; };
     }, []);
 
-    const login = async (username: string, password: string): Promise<boolean> => {
+    const login = useCallback(async (username: string, password: string): Promise<User | null> => {
         try {
             const dbUser = await loginUser(username, password);
-
-            if (dbUser) {
-                const appUser: User = {
-                    id: dbUser.id,
-                    username: dbUser.username,
-                    email: dbUser.email || undefined,
-                    role: dbUser.role as User['role'],
-                };
-
-                setUser(appUser);
-                localStorage.setItem('uattach-user', JSON.stringify(appUser));
-                return true;
-            }
-        } catch (error) {
-            console.error('Login failed', error);
-        }
-        return false;
-    };
-
-    const logout = () => {
-        setUser(null);
-        localStorage.removeItem('uattach-user');
-        router.push('/login');
-    };
-
-    const createUser = async (newUser: User) => {
-        try {
-            if (!newUser.password) {
-                throw new Error('Password is required');
-            }
-
-            const dbUser = await registerUser({
-                username: newUser.username,
-                email: newUser.email,
-                password: newUser.password,
-                role: newUser.role
-            });
-
+            if (!dbUser) return null;
             const appUser: User = {
                 id: dbUser.id,
                 username: dbUser.username,
                 email: dbUser.email || undefined,
                 role: dbUser.role as User['role'],
             };
-
             setUser(appUser);
-            localStorage.setItem('uattach-user', JSON.stringify(appUser));
+            return appUser;
+        } catch (error) {
+            console.error('Login failed', error);
+            return null;
+        }
+    }, []);
+
+    const logout = useCallback(() => {
+        setUser(null);
+        void logoutUser().catch((error) => console.error('Sign out failed', error));
+        router.push('/login');
+    }, [router]);
+
+    const createUser = useCallback(async (newUser: User) => {
+        if (!newUser.password) throw new Error('Password is required');
+        try {
+            await registerUser({
+                username: newUser.username,
+                email: newUser.email,
+                password: newUser.password,
+                role: newUser.role,
+            });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to create user';
             throw new Error(message);
         }
-    };
+    }, []);
 
     return (
         <AuthContext.Provider value={{
             user,
+            isLoading,
             login,
             logout,
             setUser,
             createUser,
-            isAuthenticated: !!user
+            isAuthenticated: !!user,
         }}>
             {children}
         </AuthContext.Provider>
@@ -104,8 +87,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
     const context = useContext(AuthContext);
-    if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
+    if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
     return context;
 }

@@ -1,264 +1,56 @@
-# Uattach Product Order System
+# Uattach wholesale equipment portal
 
-Uattach is a Next.js product ordering tool for heavy equipment attachments. Users can browse product spec sheets, add products to an order, see how the order is split into shipping containers by weight, submit checkout details, and review saved orders. Admin users can view all orders, manage users, reset passwords, and update order status.
+Uattach is a B2B product and order-request site for equipment attachments.
+The public homepage introduces the business and shows a lightweight preview of the Standard Low Pro Bucket sample sheet.
+Approved member accounts can open the PDF catalog, choose a bucket size and quantity, and prepare an order request.
+The order page shows estimated product weights and the current container plan without prices or payment fields.
+Customer accounts have a separate sign-in route and a placeholder workspace while their requirements are being defined.
 
-## Tech Stack
+## Current product sample
 
-- Next.js 16 App Router
-- React 19
-- TypeScript
-- Tailwind CSS 4
-- Prisma 6
-- PostgreSQL
-- `react-pdf` / `pdfjs-dist` for PDF thumbnails
-- `canvas-confetti` on checkout success
+The supplied file `requirement/Standard-Low-Pro-Bucket-3.pdf` is the initial member catalog.
+It currently has one page and lists five widths: 62, 68, 74, 80, and 84 inches.
+Variant weights use the PDF's "weight with bolt on cutting edge" row, converted from pounds to kilograms.
+The homepage preview is generated as `public/catalog/standard-low-pro-bucket-preview.webp`.
+The full PDF is intended to live in the private R2 bucket and is served through an authenticated route.
 
-## Local Setup
+## Current architecture
 
-Install dependencies:
+- Next.js App Router and React.
+- Cloudflare Workers deployment through the existing OpenNext adapter.
+- Cloudflare R2 binding named `CATALOG` for the member catalog PDF.
+- Cloudflare D1 for products, users, sessions, and orders.
+- Existing server-side container planning logic, with a 22,000 kg container maximum and 18,000 kg minimum final-container weight.
+- PBKDF2 password hashes and random, database-backed sessions in HttpOnly cookies.
 
-```bash
-npm install
-```
+The application database and private catalog storage are both hosted by Cloudflare.
 
-Create an `.env` file with a PostgreSQL connection string:
+## Local development
 
-```bash
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
-```
+Install dependencies with `npm install`.
+Apply `migrations/0001_initial.sql` to the local D1 database with `npx wrangler d1 migrations apply uattach-app --local`.
+Set `ADMIN_SETUP_TOKEN` in `.dev.vars` and run the application with `npm run dev`.
+Create the first administrator at `/setup/admin`; the setup endpoint closes after the first administrator is created.
+The migration seeds the sample bucket variants with stable product IDs used by the order flow.
 
-Create/update the database schema:
+The catalog viewer reads the PDF from R2 and will show a storage-not-configured or file-not-found state until the binding and object are available.
+For a local Wrangler R2 object, run `npx wrangler r2 object put uattach-private-catalog/standard-low-pro-bucket.pdf --file="requirement/Standard-Low-Pro-Bucket-3.pdf" --local`.
 
-```bash
-npx prisma db push
-```
+## Cloudflare setup
 
-Seed demo data:
+The Worker custom domain in `wrangler.jsonc` is `www.uattach.com`.
+The `APP_DB` binding expects a D1 database named `uattach-app`.
+The `CATALOG` binding expects an R2 bucket named `uattach-private-catalog`.
+Create both resources in the intended Cloudflare account, update the D1 database ID in `wrangler.jsonc`, apply the migration, and upload the PDF with `npx wrangler r2 object put uattach-private-catalog/standard-low-pro-bucket.pdf --file="requirement/Standard-Low-Pro-Bucket-3.pdf"`.
+Set `ADMIN_SETUP_TOKEN` as a Worker secret before deployment.
+Configure the domain and the Worker custom-domain route in the intended Cloudflare account before deploying.
+The root domain redirect to `www` still needs to be configured in Cloudflare.
 
-```bash
-npx prisma db seed
-```
+Deploy with `npm run deploy` after the D1 binding, R2 bucket, database migration, setup secret, and domain route are ready.
+Do not expose the R2 bucket publicly because the API route enforces member access before returning the catalog.
 
-Run the development server:
+## Verification
 
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-## Demo Accounts
-
-The seed script creates two users:
-
-- Admin: `admin` / `Admin#987`
-- User: `demo` / `Demo#123`
-
-Passwords are currently stored as plain text for prototype use. Do not use this auth model in production.
-
-## Scripts
-
-```bash
-npm run dev      # Start Next.js dev server with webpack
-npm run build    # Production build
-npm run preview  # OpenNext build + local Wrangler preview
-npm run deploy   # OpenNext build + Cloudflare deploy
-npm run upload   # OpenNext build + upload only
-npm run cf-typegen  # Generate Cloudflare env typings
-npm run start    # Start built app
-npm run lint     # ESLint
-```
-
-The `postinstall` hook runs `prisma generate`.
-
-## Project Structure
-
-```text
-src/app/                  Next.js routes and server actions
-src/app/actions.ts        Database-backed server actions
-src/components/           Shared UI components
-src/context/              Client auth and cart providers
-src/lib/                  Types, constants, Prisma client, order logic
-prisma/schema.prisma      Database schema
-prisma/seed.ts            Demo users and product seed data
-public/assets/            Local product PDFs and images
-public/specs/             Seed product PDF spec sheets
-tests/                    Lightweight TypeScript tests
-```
-
-## Core User Flows
-
-### Catalog
-
-[src/app/page.tsx](src/app/page.tsx) renders the product catalog. It starts with mock products from [src/lib/mockData.ts](src/lib/mockData.ts), then loads database products through `getProducts()` in [src/app/actions.ts](src/app/actions.ts). If database products exist, they replace the mock catalog.
-
-Product cards render PDF thumbnails with [src/components/PDFThumbnail.tsx](src/components/PDFThumbnail.tsx). The PDF modal uses a browser PDF object embed.
-
-### Cart And Container Planning
-
-Cart state lives in [src/context/CartContext.tsx](src/context/CartContext.tsx) and is persisted to localStorage as `uattach-cart`.
-
-The cart calculates a preview container split with [src/lib/containerLogic.ts](src/lib/containerLogic.ts):
-
-- Maximum container weight: `22000 kg`
-- Minimum final container weight: `18000 kg`
-- Packing strategy: greedy, quantity-splitting allowed
-
-The preview is for user feedback only. The database write path recalculates containers server-side before saving an order.
-
-### Checkout
-
-[src/components/CheckoutForm.tsx](src/components/CheckoutForm.tsx) submits:
-
-- Optional `userId`
-- Shipping address
-- Product IDs and quantities
-- Split strategy label
-
-It does not submit trusted container totals. The server validates the item list, fetches product weights from PostgreSQL, recalculates containers with [src/lib/orderPersistence.ts](src/lib/orderPersistence.ts), then saves the order in one Prisma transaction.
-
-### Order Persistence
-
-`createOrder()` in [src/app/actions.ts](src/app/actions.ts):
-
-1. Validates submitted items and shipping address.
-2. Fetches product weights from the database.
-3. Builds the persisted container plan server-side.
-4. Creates the `Order` and `ShippingAddress`.
-5. Creates each `Container`.
-6. Creates `OrderItem` rows linked to both the order and the saved container.
-7. Returns the order with products, containers, container items, shipping address, and user.
-
-Orders are now database-backed after checkout. The old `uattach-orders` localStorage fallback is no longer used for new order history.
-
-### Orders
-
-[src/app/orders/page.tsx](src/app/orders/page.tsx) loads orders through `getUserOrders(user.id)`.
-
-- Admin users receive all orders.
-- Non-admin users receive only their own orders.
-- Containers are returned with nested order items and products.
-
-[src/app/orders/[id]/page.tsx](src/app/orders/[id]/page.tsx) loads an individual order through `getOrder(orderId)` instead of localStorage. Admin status changes call `updateOrderStatus()`, which verifies the acting user is an admin before updating the database.
-
-### Auth And Users
-
-Auth state lives in [src/context/AuthContext.tsx](src/context/AuthContext.tsx) and is stored in localStorage as `uattach-user`.
-
-Server actions provide:
-
-- `loginUser()`
-- `registerUser()`
-- `getUsers()`
-- `updateUserPassword()`
-
-[src/app/admin/users/page.tsx](src/app/admin/users/page.tsx) uses these actions for user management.
-
-This is still prototype auth:
-
-- Passwords are plain text.
-- Sessions are localStorage only.
-- There is no cookie/session middleware.
-- Client-side route protection is not enough for production.
-
-## Data Model
-
-The Prisma schema is in [prisma/schema.prisma](prisma/schema.prisma).
-
-Main models:
-
-- `User`: login identity, role, optional shipping address, related orders
-- `Product`: catalog item, PDF URL, optional image URL, weight, features
-- `Order`: submitted order, status, total weight, split strategy, address, containers, items
-- `OrderItem`: product quantity linked to an order and optionally a container
-- `Container`: order container number, total weight, max weight, nested items
-- `ShippingAddress`: checkout/profile address data
-
-`OrderItem` rows are stored at the container level when orders are created. If a product quantity is split across containers, there will be one `OrderItem` row per container allocation.
-
-## Product Data
-
-There are two product sources:
-
-- [src/lib/mockData.ts](src/lib/mockData.ts) uses local bucket PDFs under `public/assets`.
-- [prisma/seed.ts](prisma/seed.ts) creates database products using PDFs under `public/specs`.
-
-When the database has products, the homepage displays seeded database products. When the database is unavailable or empty, the homepage falls back to mock products.
-
-## Cloudflare Migration
-
-This repository now includes an initial Cloudflare Workers migration path based on OpenNext:
-
-- `wrangler.jsonc`
-- `open-next.config.ts`
-- `public/_headers`
-- `.dev.vars.example`
-
-The migration also updates the runtime stack in a few important ways:
-
-- Next.js was bumped to `16.2.5` because the current OpenNext Cloudflare adapter does not support `16.1.6`.
-- Prisma is configured with `engineType = "client"` in [prisma/schema.prisma](prisma/schema.prisma).
-- [src/lib/prisma.ts](src/lib/prisma.ts) now uses `@prisma/adapter-pg` and `pg`, which is the compatible direction for Cloudflare Workers.
-- [next.config.ts](next.config.ts) now initializes OpenNext's Cloudflare dev context and externalizes Prisma/PG packages for the server bundle.
-
-### Local Cloudflare Setup
-
-1. Install dependencies.
-2. Copy `.dev.vars.example` to `.dev.vars`.
-3. Set `DATABASE_URL` in `.dev.vars` or in Cloudflare secrets.
-4. Run `npm run preview` to build for Cloudflare and start Wrangler locally.
-
-### Expected Cloudflare Secrets
-
-- `DATABASE_URL`
-
-If you deploy to Cloudflare, store secrets with Wrangler rather than committing them to `wrangler.jsonc`.
-
-### Current Migration Status
-
-The repo-side migration files are in place, but local verification on this machine is still partially blocked by native binary issues:
-
-- Next 16's local SWC package is failing code-sign validation in this macOS environment.
-- OpenNext's build path currently trips over `@ast-grep/napi` for the same reason.
-
-Those are local toolchain/runtime problems, not app-level TypeScript or routing errors. The Cloudflare migration should still be validated in Linux CI or a real Cloudflare build environment before treating it as production-ready.
-
-A Linux verification workflow is included at [.github/workflows/cloudflare-compat.yml](.github/workflows/cloudflare-compat.yml). It runs lint, the existing TypeScript test, the standard Next build, and the OpenNext Cloudflare build with a placeholder `DATABASE_URL`.
-
-## Testing And Verification
-
-There is no full test runner configured yet. The current lightweight TypeScript test verifies server-side container persistence planning:
-
-```bash
-npx ts-node --project tsconfig.json --compiler-options '{"module":"commonjs"}' tests/orderPersistence.test.ts
-```
-
-General checks:
-
-```bash
-npm run lint
-npm run build
-npm run preview
-```
-
-## Known Limitations
-
-- Auth is prototype-only and should be replaced with secure password hashing plus real sessions.
-- Profile shipping address currently updates only the local user object, not the Prisma `ShippingAddress` relation.
-- Product admin/editing screens do not exist yet.
-- There is no order deletion, cancellation, or audit trail.
-- `getOrder(orderId)` does not enforce per-user authorization yet.
-- Server actions return user records in some order queries; avoid exposing password fields before production hardening.
-- PDF thumbnail workers load from `unpkg.com`, which requires network access in the browser.
-- The README setup assumes an external PostgreSQL database; no local Docker Compose file is included.
-- The Cloudflare migration has not yet been verified in a clean Linux/CI environment because local macOS native module loading is failing for SWC and `@ast-grep/napi`.
-
-## Recommended Next Work
-
-1. Replace localStorage auth with real session-backed authentication.
-2. Persist profile shipping addresses through a server action.
-3. Add order authorization checks for non-admin detail access.
-4. Add product management for admins.
-5. Validate the Cloudflare build in CI or a Cloudflare preview deployment and adjust any runtime-specific Prisma behavior that appears there.
-6. Add a proper test runner and cover checkout/order persistence end to end.
-7. Align mock products and seeded products so local fallback and database catalog show the same business data.
+Run `npm run lint` for ESLint.
+Run `npm run build` for the Next.js production build and TypeScript checks.
+The Cloudflare-specific OpenNext preview or deployment should also be run after the Cloudflare account resources are configured.

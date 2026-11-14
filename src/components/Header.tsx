@@ -5,47 +5,37 @@ import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
 export function Header() {
-    const { items, openCart } = useCart();
+    const { items } = useCart();
     const { user, logout } = useAuth();
-    const cartCount = items.reduce((acc, item) => acc + item.quantity, 0);
+    const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md supports-[backdrop-filter]:bg-white/60">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4">
-                <div className="flex items-center gap-8">
-                    <Link href="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
-                        <span className="text-blue-600">U</span>attach
-                    </Link>
-                    <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
-                        <Link href="/" className="hover:text-slate-900 transition-colors">Catalog</Link>
-                        {user && (
-                            <Link href="/orders" className="hover:text-slate-900 transition-colors">My Orders</Link>
-                        )}
-                        {user && user.role === 'admin' && (
-                            <Link href="/admin/users" className="hover:text-purple-600 transition-colors">Users</Link>
-                        )}
-                    </nav>
-                </div>
-                <div className="flex items-center gap-4">
-                    {user ? (
+        <header className="site-header">
+            <div className="site-header-inner">
+                <Link href="/" className="brand-lockup" aria-label="Uattach home">
+                    <span className="brand-mark">U</span>
+                    <span>attach</span>
+                    <span className="brand-divider" />
+                    <span className="brand-descriptor">Equipment supply</span>
+                </Link>
+                <nav className="main-nav" aria-label="Main navigation">
+                    <Link href="/#equipment">Equipment</Link>
+                    <Link href="/#about">About Uattach</Link>
+                    {user && user.role !== 'buyer' ? <Link href="/catalog">Member catalog</Link> : null}
+                    <Link href={user?.role === 'buyer' ? '/customer' : '/customer/login'}>Customer access</Link>
+                </nav>
+                <div className="header-actions">
+                    {user && user.role !== 'buyer' ? (
                         <>
-                            <Link href="/profile" className="hidden sm:inline text-sm font-medium text-slate-700 hover:text-blue-600 transition-colors">
-                                Hi, {user.shippingAddress?.firstName ? `${user.shippingAddress.firstName} ${user.shippingAddress.lastName}` : user.username}
+                            <Link className="header-order-link" href="/order">
+                                Order{cartCount > 0 ? <span className="order-count">{cartCount}</span> : null}
                             </Link>
-                            <button onClick={logout} className="text-sm font-medium text-slate-500 hover:text-red-600 transition-colors">
-                                Sign Out
-                            </button>
-                            <button
-                                onClick={openCart}
-                                className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 transition-colors"
-                            >
-                                Cart ({cartCount})
-                            </button>
+                            <button className="text-button" onClick={logout} type="button">Sign out</button>
                         </>
+                    ) : user?.role === 'buyer' ? (
+                        <button className="text-button" onClick={logout} type="button">Sign out</button>
                     ) : (
-                        <Link href="/login" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-                            Sign In
-                        </Link>
+                        <Link href="/login" className="header-sign-in">Member sign in <span aria-hidden="true">↗</span></Link>
                     )}
                 </div>
             </div>
