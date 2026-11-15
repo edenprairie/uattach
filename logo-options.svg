@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="930" viewBox="0 0 1200 930">
+<rect width="1200" height="930" fill="#f2eee6"/>
+<text x="70" y="62" fill="#82796e" font-family="Arial,sans-serif" font-size="13" font-weight="700" letter-spacing="3">UATTACH / IDENTITY STUDIES</text>
+<text x="70" y="101" fill="#242321" font-family="Arial,sans-serif" font-size="31" font-weight="600">Four directions for a more confident trade brand</text>
+<g transform="translate(60 140)">
+<rect width="1080" height="160" rx="8" fill="#fffefa"/>
+<text x="28" y="31" fill="#9b9184" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2">01 / THE LINK</text>
+<g transform="translate(48 57)"><path d="M7 0h27v28H7V0Zm27 11h15v17H34" fill="none" stroke="#941d21" stroke-width="5"/><path d="M0 20h25v27H0V20Zm25 0h15" fill="none" stroke="#b9965d" stroke-width="5"/><path d="M20 13h12" stroke="#941d21" stroke-width="5"/></g>
+<text x="125" y="111" fill="#242321" font-family="Futura,Arial,sans-serif" font-size="42" font-weight="600" letter-spacing="1.4">UATTACH</text>
+<text x="128" y="137" fill="#817970" font-family="Avenir Next,Arial,sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">EQUIPMENT SUPPLY</text>
+<text x="560" y="95" fill="#716a61" font-family="Arial,sans-serif" font-size="15">Geometric, open letterforms give the mark a modern</text><text x="560" y="119" fill="#716a61" font-family="Arial,sans-serif" font-size="15">architectural feel while staying easy to read.</text>
+</g>
+<g transform="translate(60 320)">
+<rect width="1080" height="160" rx="8" fill="#25231f"/>
+<text x="28" y="31" fill="#c8bda9" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2">02 / THE MONOGRAM</text>
+<path d="M83 53h57l-12 63q-2 13-17 13t-17-13Z" fill="none" stroke="#c5a367" stroke-width="5"/><path d="M79 62h65M85 75h55" stroke="#f7f3eb" stroke-width="3"/><path d="M96 101l18 15 24-35" fill="none" stroke="#941d21" stroke-width="6"/>
+<text x="170" y="104" fill="#fffefa" font-family="DIN Alternate,Arial Narrow,Arial,sans-serif" font-size="43" font-weight="700" letter-spacing="1.8">UATTACH</text>
+<text x="174" y="131" fill="#c5a367" font-family="Avenir Next,Arial,sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">WHOLESALE EQUIPMENT</text>
+<text x="560" y="95" fill="#d0c9bd" font-family="Arial,sans-serif" font-size="15">A condensed industrial face adds strength and</text><text x="560" y="119" fill="#d0c9bd" font-family="Arial,sans-serif" font-size="15">authority, with a crisp equipment-label quality.</text>
+</g>
+<g transform="translate(60 500)">
+<rect width="1080" height="160" rx="8" fill="#fffefa"/>
+<text x="28" y="31" fill="#9b9184" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2">03 / THE FIELD MARK</text>
+<g transform="translate(48 59)"><path d="M4 13 31 0l27 13v29L31 55 4 42Z" fill="#941d21"/><path d="m14 17 17-8 17 8v18L31 44 14 35Z" fill="none" stroke="#fffefa" stroke-width="2.5"/><path d="m19 29 8 7 17-18" fill="none" stroke="#c5a367" stroke-width="4"/></g>
+<text x="125" y="107" fill="#242321" font-family="Rockwell,Georgia,serif" font-size="42" font-weight="700" letter-spacing=".2">Uattach</text>
+<text x="128" y="135" fill="#817970" font-family="Avenir Next,Arial,sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">BUILT FOR BUSINESS</text>
+<text x="560" y="95" fill="#716a61" font-family="Arial,sans-serif" font-size="15">A confident slab serif brings a crafted, established</text><text x="560" y="119" fill="#716a61" font-family="Arial,sans-serif" font-size="15">character and a more memorable brand voice.</text>
+</g>
+<g transform="translate(60 680)">
+<rect width="1080" height="160" rx="8" fill="#e8e2d8"/>
+<text x="28" y="31" fill="#82796e" font-family="Arial,sans-serif" font-size="11" font-weight="700" letter-spacing="2">04 / THE WORDMARK</text>
+<path d="M50 63h18v42q0 15 14 15t14-15V63h18v43q0 31-32 31t-32-31Z" fill="#941d21"/><path d="M56 72h52" stroke="#c5a367" stroke-width="4"/>
+<text x="145" y="108" fill="#242321" font-family="Avenir Next,Arial,sans-serif" font-size="45" font-weight="700" letter-spacing="-.8">Uattach</text>
+<text x="149" y="135" fill="#746b60" font-family="Avenir Next,Arial,sans-serif" font-size="9" font-weight="600" letter-spacing="2.8">DIRECT SUPPLY PARTNER</text>
+<text x="560" y="95" fill="#645d54" font-family="Arial,sans-serif" font-size="15">A custom-tuned humanist sans pairs soft curves</text><text x="560" y="119" fill="#645d54" font-family="Arial,sans-serif" font-size="15">with precise spacing for a refined, approachable feel.</text>
+</g>
+</svg>
