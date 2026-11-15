@@ -289,10 +289,10 @@ export default function UserManagementPage() {
                                         value={formData.role}
                                         onChange={e => setFormData({ ...formData, role: e.target.value as User['role'] })}
                                     >
-                                        <option value="user">Regular User</option>
-                                        <option value="buyer">Buyer</option>
-                                        <option value="admin">Administrator</option>
+                                        <option value="user">Member</option>
+                                        <option value="buyer">Customer</option>
                                     </select>
+                                    <p className="mt-2 text-xs text-slate-500">Members can browse the product catalog and submit quantity requests. Administrator accounts are managed separately.</p>
                                 </div>
 
                                 <div className="pt-4 flex gap-3">
