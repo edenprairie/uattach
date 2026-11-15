@@ -343,7 +343,7 @@ export default function UserManagementPage() {
                                             ${u.role === 'admin' ? 'bg-purple-100 text-purple-800' :
                                                 u.role === 'buyer' ? 'bg-green-100 text-green-800' :
                                                     'bg-blue-100 text-blue-800'}`}>
-                                            {u.role.toUpperCase()}
+                                            {u.role === 'admin' ? 'Administrator' : u.role === 'buyer' ? 'Customer' : 'Member'}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
